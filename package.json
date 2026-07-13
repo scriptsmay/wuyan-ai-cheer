@@ -2,14 +2,43 @@
   "name": "wuyan-ai-cheer",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "无言 AI 应援与每日加油打卡 Web H5",
   "scripts": {
-    "dev": "npm --prefix web run dev",
-    "typecheck": "npm --prefix web run typecheck",
-    "lint": "npm --prefix web run lint",
-    "build": "npm --prefix web run build"
+    "dev": "vite --host 127.0.0.1",
+    "typecheck": "vue-tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "test": "vitest run",
+    "build": "npm run typecheck && npm run test && vite build && node ./scripts/copy-dist-404.mjs",
+    "deploy": "npm run build && MSYS_NO_PATHCONV=1 tcb app deploy wuyan-ai-cheer --env-id trial-sh-d1gqznm4577d6a062 --framework static --install-command \"\" --build-command \"\" --output-dir ./dist --deploy-path / --force",
+    "preview": "vite preview --host 127.0.0.1"
   },
   "engines": {
     "node": ">=18.18"
+  },
+  "dependencies": {
+    "@cloudbase/js-sdk": "^2.24.0",
+    "@fontsource/noto-sans-sc": "^5.2.8",
+    "@fontsource/zcool-qingke-huangyou": "^5.2.8",
+    "lucide-vue-next": "^0.468.0",
+    "qrcode": "^1.5.4",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/qrcode": "^1.5.5",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/test-utils": "^2.4.6",
+    "eslint": "^9.17.0",
+    "eslint-plugin-vue": "^9.32.0",
+    "globals": "^15.14.0",
+    "jsdom": "^25.0.1",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.18.2",
+    "vite": "^6.0.5",
+    "vitest": "^2.1.8",
+    "vue-eslint-parser": "^9.4.3",
+    "vue-tsc": "^2.2.0"
   }
 }
