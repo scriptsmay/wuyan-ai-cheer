@@ -88,7 +88,7 @@ function handleError(error: unknown) {
     <div class="checkin-hero">
       <span class="eyebrow"><CalendarCheck :size="18" /> DAILY SIGNAL</span>
       <h1>今天的加油，<br />由你按下发送键。</h1>
-      <p>进入页面不会自动写入。点击后由服务端按上海自然日记账，同一匿名身份一天只增加一次。</p>
+      <p>进入页面不会自动写入。点击后由服务端按北京时间自然日记账，同一匿名身份一天只增加一次。</p>
 
       <div class="stat-strip">
         <div><span>今日信号</span><b>{{ stats?.today_count ?? '—' }}</b><small>人</small></div>
