@@ -1,0 +1,26 @@
+:root {
+  --bg: #0a0e1a;
+  --bg-elevated: #10182a;
+  --card: #121d30;
+  --card-strong: #17263d;
+  --line: #24435a;
+  --line-soft: rgba(80, 128, 154, 0.22);
+  --primary: #00d4ff;
+  --primary-soft: #8deeff;
+  --secondary: #ff9f4d;
+  --victory: #f4c95d;
+  --low: #7756a8;
+  --daily: #20c7b7;
+  --hope: #ff5a5f;
+  --text: #f4fbff;
+  --text-muted: #86a8b8;
+  --text-dim: #577585;
+  --danger: #ff7378;
+  --success: #55e2b6;
+  --radius-sm: 10px;
+  --radius-md: 18px;
+  --radius-lg: 28px;
+  --shadow-signal: 0 22px 60px rgba(0, 0, 0, 0.38);
+  --font-display: "ZCOOL QingKe HuangYou", fantasy;
+  --font-body: "Noto Sans SC", sans-serif;
+}

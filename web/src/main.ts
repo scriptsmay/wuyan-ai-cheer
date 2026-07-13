@@ -1,0 +1,15 @@
+import '@fontsource/noto-sans-sc/chinese-simplified-400.css'
+import '@fontsource/noto-sans-sc/chinese-simplified-500.css'
+import '@fontsource/noto-sans-sc/chinese-simplified-700.css'
+import '@fontsource/noto-sans-sc/latin-400.css'
+import '@fontsource/noto-sans-sc/latin-500.css'
+import '@fontsource/noto-sans-sc/latin-700.css'
+import '@fontsource/zcool-qingke-huangyou/chinese-simplified-400.css'
+import '@fontsource/zcool-qingke-huangyou/latin-400.css'
+import { createApp } from 'vue'
+import App from './App.vue'
+import { router } from './router'
+import './styles/tokens.css'
+import './styles/base.css'
+
+createApp(App).use(router).mount('#app')
