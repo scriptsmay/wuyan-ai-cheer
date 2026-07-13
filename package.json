@@ -10,7 +10,7 @@
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
     "build": "npm run typecheck && npm run test && vite build && node ./scripts/copy-dist-404.mjs",
-    "deploy": "npm run build && MSYS_NO_PATHCONV=1 tcb app deploy wuyan-ai-cheer --env-id trial-sh-d1gqznm4577d6a062 --framework static --install-command \"\" --build-command \"\" --output-dir ./dist --deploy-path / --force",
+    "deploy": "npm run build && node ./scripts/deploy.mjs",
     "preview": "vite preview --host 127.0.0.1"
   },
   "engines": {
