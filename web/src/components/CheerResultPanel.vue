@@ -101,9 +101,9 @@ function handleDownload() {
         <p v-if="requiresLongPressSave()" class="save-hint">请长按上方图片保存到相册</p>
       </div>
       <button v-else class="card-placeholder" type="button" :disabled="cardLoading" @click="handleRender">
-        <ImageIcon :size="38" />
-        <strong>{{ cardLoading ? '正在合成 1080 × 1440 图片' : '生成 3:4 应援卡' }}</strong>
-        <small>同源素材 · 内置二维码 · 不上传相册</small>
+        <ImageIcon :size="44" />
+        <strong>{{ cardLoading ? '正在合成 1080 × 1440 图片' : '点击生成应援卡' }}</strong>
+        <small>{{ cardLoading ? '约需 2-5 秒' : '基于当前文案生成 3:4 图片' }}</small>
       </button>
       <p v-if="cardError" class="inline-error">{{ cardError }}</p>
       <button v-if="card && !requiresLongPressSave()" class="secondary-button wide" type="button" @click="handleDownload">

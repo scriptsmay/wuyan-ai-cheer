@@ -139,10 +139,10 @@ async function drawFooter(context: CanvasRenderingContext2D, input: CardInput) {
   context.fillStyle = '#587483'
   context.font = '400 22px "Noto Sans SC"'
   context.fillText(`生成日期 ${formatDate(new Date())}`, 92, 1320)
-  context.fillText(`数据更新 ${formatDateTime(input.sourceSnapshotAt)}`, 92, 1355)
+  // context.fillText(`数据更新 ${formatDateTime(input.sourceSnapshotAt)}`, 92, 1355)
   context.fillStyle = '#FF9F4D'
   context.font = '700 22px "Noto Sans SC"'
-  context.fillText('AI 生成 · 数据以来源快照为准', 92, 1390)
+  context.fillText('AI 生成', 92, 1390)
 }
 
 function wrapText(context: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {

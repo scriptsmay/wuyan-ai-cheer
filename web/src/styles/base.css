@@ -737,19 +737,42 @@ button:disabled {
   aspect-ratio: 3 / 4;
   padding: 24px;
   color: var(--primary);
-  border: 1px dashed var(--line);
+  border: 2px dashed var(--primary);
+  border-radius: var(--radius-md);
   background:
     linear-gradient(135deg, transparent 0 66%, rgba(0, 212, 255, 0.08) 66% 67%, transparent 67%),
-    var(--bg);
+    rgba(0, 212, 255, 0.04);
+  animation: card-placeholder-pulse 2s ease-in-out infinite;
+}
+
+.card-placeholder:hover {
+  border-color: var(--primary-soft);
+  background: rgba(0, 212, 255, 0.08);
+  transform: scale(1.01);
 }
 
 .card-placeholder strong {
+  margin-top: 16px;
   color: var(--text);
+  font-size: 17px;
 }
 
 .card-placeholder small {
+  margin-top: 8px;
   color: var(--text-dim);
   text-align: center;
+  font-size: 13px;
+}
+
+@keyframes card-placeholder-pulse {
+  0%, 100% {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.3);
+  }
+  50% {
+    border-color: var(--primary-soft);
+    box-shadow: 0 0 0 4px rgba(0, 212, 255, 0);
+  }
 }
 
 .card-image-wrap img {
