@@ -38,7 +38,7 @@ import { RouterLink } from 'vue-router'
     </div>
   </section>
 
-  <section class="signal-manifesto page-section">
+  <!-- <section class="signal-manifesto page-section">
     <span>NO AUTO-POSTING</span>
-  </section>
+  </section> -->
 </template>
