@@ -23,5 +23,6 @@ defineEmits<{ retry: [] }>()
     <button v-if="retryable" class="ghost-button compact" type="button" @click="$emit('retry')">
       <RefreshCw :size="16" /> 重试
     </button>
+    <slot name="action" />
   </section>
 </template>

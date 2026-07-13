@@ -115,6 +115,10 @@ export function getMyCheckin(): Promise<MyCheckin> {
   return apiRequest<MyCheckin>('/api/checkins/me')
 }
 
+export function getMyCheckinReport(): Promise<CheerResult> {
+  return apiRequest<CheerResult>('/api/checkins/me/report')
+}
+
 export function getCheckinStats(): Promise<CheckinStats> {
   return apiRequest<CheckinStats>('/api/checkins/stats', { auth: false })
 }

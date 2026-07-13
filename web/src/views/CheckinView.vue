@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { CalendarCheck, RadioTower } from 'lucide-vue-next'
+import { CalendarCheck, Image as ImageIcon, RadioTower } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
 import CheerResultPanel from '../components/CheerResultPanel.vue'
 import StatusPanel from '../components/StatusPanel.vue'
-import { ApiError, createCheckin, generateCheer, getCheckinStats, getMyCheckin } from '../lib/api'
+import { ApiError, createCheckin, generateCheer, getCheckinStats, getMyCheckin, getMyCheckinReport } from '../lib/api'
 import type { CheerResult, CheckinResult, CheckinStats, MyCheckin, UiStatus } from '../types'
 
 const me = ref<MyCheckin | null>(null)
@@ -45,6 +45,23 @@ async function checkIn(regenerate = false) {
       today: nextResult.checkin
     }
     if (stats.value) stats.value.today_count = nextResult.today_count
+    status.value = 'success'
+  } catch (error) {
+    handleError(error)
+  }
+}
+
+async function viewTodayReport() {
+  if (status.value === 'loading') return
+  status.value = 'loading'
+  try {
+    const report = await getMyCheckinReport()
+    cheer.value = report
+    result.value = {
+      checkin: me.value!.today!,
+      already_checked_in: true,
+      today_count: stats.value?.today_count ?? 0
+    }
     status.value = 'success'
   } catch (error) {
     handleError(error)
@@ -93,10 +110,22 @@ function handleError(error: unknown) {
         v-if="status !== 'success'"
         :status="status"
         :title="me?.checked_in_today ? '今日已经打过卡' : undefined"
-        :message="message || (me?.checked_in_today ? '可以再次点击查看或重新生成今日加油卡，统计不会重复增加。' : undefined)"
+        :message="message || (me?.checked_in_today ? '可以查看今日卡片，或点击重新生成（统计不会重复增加）。' : undefined)"
         :retryable="status === 'network-error' || status === 'service-error'"
         @retry="load"
-      />
+      >
+        <template #action>
+          <button
+            v-if="me?.checked_in_today && me?.today?.report_id"
+            class="ghost-button compact"
+            type="button"
+            :disabled="status === 'loading'"
+            @click="viewTodayReport"
+          >
+            <ImageIcon :size="16" /> 查看今日卡片
+          </button>
+        </template>
+      </StatusPanel>
       <CheerResultPanel
         v-if="cheer && result"
         :result="cheer"
