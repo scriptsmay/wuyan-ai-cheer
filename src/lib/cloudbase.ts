@@ -71,8 +71,34 @@ export async function getAuthSnapshot(): Promise<AuthSnapshot> {
     mode: isAnonymousUser(user) ? 'anonymous' : 'authenticated',
     accessToken,
     uid,
-    username: String(user?.name || user?.username || '').trim()
+    username: guessUsername(user)
   }
+}
+
+function guessUsername(user: SessionUser | undefined): string {
+  const fromSession = String(user?.name || user?.username || '').trim()
+  if (fromSession) return fromSession
+
+  // CloudBase SDK stores user profile separately from session data.
+  // Try reading from @cloudbase/js-sdk internal currentUser state.
+  try {
+    const currentUser = (cloudbaseAuth as unknown as Record<string, unknown>).currentUser as Record<string, unknown> | undefined
+    if (currentUser) {
+      const name = String(currentUser.name || currentUser.username || '').trim()
+      if (name) return name
+    }
+  } catch { /* ignore */ }
+
+  // Fallback: read from the user_info localStorage key written by the SDK.
+  try {
+    const raw = localStorage.getItem(`user_info_${env}`)
+    if (raw) {
+      const info = JSON.parse(raw) as Record<string, unknown>
+      return String(info.name || info.username || '').trim()
+    }
+  } catch { /* ignore */ }
+
+  return ''
 }
 
 export async function getAccessToken(forceRefresh = false): Promise<string> {
