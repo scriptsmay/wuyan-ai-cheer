@@ -119,7 +119,7 @@ async function submit(regenerate = false) {
         :retryable="status === 'network-error' || status === 'service-error' || status === 'empty'"
         @retry="submit(false)"
       />
-      <CheerResultPanel v-if="result" v-show="status === 'success'" :result="result" @regenerate="submit(true)" />
+      <CheerResultPanel v-if="result" v-show="status === 'success'" :result="result" :mood="mood" @regenerate="submit(true)" />
     </div>
   </section>
 </template>

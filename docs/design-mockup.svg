@@ -1,0 +1,111 @@
+<svg viewBox="0 0 680 980" xmlns="http://www.w3.org/2000/svg">
+  <title>Proposed poster layout</title>
+  <desc>A design mockup of the improved Wuyan cheer poster layout</desc>
+
+  <!-- Poster background -->
+  <rect x="0" y="40" width="680" height="907" fill="#0A0E1A"/>
+
+  <!-- Subtle grid (weaker) -->
+  <g opacity="0.04" stroke="#00D4FF" stroke-width="1">
+    <line x1="0" y1="140" x2="680" y2="80"/>
+    <line x1="0" y1="188" x2="680" y2="128"/>
+    <line x1="0" y1="236" x2="680" y2="176"/>
+    <line x1="0" y1="284" x2="680" y2="224"/>
+    <line x1="0" y1="332" x2="680" y2="272"/>
+    <line x1="0" y1="380" x2="680" y2="320"/>
+    <line x1="0" y1="428" x2="680" y2="368"/>
+    <line x1="0" y1="476" x2="680" y2="416"/>
+    <line x1="0" y1="524" x2="680" y2="464"/>
+    <line x1="0" y1="572" x2="680" y2="512"/>
+    <line x1="0" y1="620" x2="680" y2="560"/>
+    <line x1="0" y1="668" x2="680" y2="608"/>
+    <line x1="0" y1="716" x2="680" y2="656"/>
+    <line x1="0" y1="764" x2="680" y2="704"/>
+    <line x1="0" y1="812" x2="680" y2="752"/>
+    <line x1="0" y1="860" x2="680" y2="800"/>
+  </g>
+
+  <!-- Top-left accent bars -->
+  <rect x="52" y="82" width="10" height="112" fill="#FF9F4D"/>
+  <rect x="73" y="82" width="4" height="76" fill="#00D4FF"/>
+
+  <!-- Header -->
+  <text x="134" y="130" font-family="sans-serif" font-size="34" font-weight="500" fill="#DFFBFF">每日加油信号</text>
+  <text x="136" y="165" font-family="sans-serif" font-size="14" font-weight="500" letter-spacing="0.08em" fill="#7AA8B8">WUYAN / FAN SIGNAL STATION</text>
+
+  <!-- Status line (muted) -->
+  <text x="136" y="210" font-family="monospace" font-size="18" font-weight="400" fill="#8DE7FF">2026-07-20  ·  连续 1 天  ·  累计 1 天</text>
+
+  <!-- Eyebrow -->
+  <text x="64" y="330" font-family="sans-serif" font-size="16" font-weight="500" letter-spacing="0.06em" fill="#00D4FF">SIGNAL / 01</text>
+
+  <!-- Signal wave motif -->
+  <g stroke="#00D4FF" fill="none" stroke-width="2" opacity="0.22">
+    <path d="M 520 360 Q 420 460 520 560 Q 620 660 520 760"/>
+    <path d="M 560 320 Q 460 420 560 520 Q 660 620 560 720"/>
+  </g>
+
+  <!-- Main copy (display font, larger) -->
+  <text x="64" y="420" font-family="serif" font-size="58" font-weight="500" fill="#F5FBFF">日常打卡，</text>
+  <text x="64" y="490" font-family="serif" font-size="58" font-weight="500" fill="#F5FBFF">今天也来</text>
+  <text x="64" y="560" font-family="serif" font-size="58" font-weight="500" fill="#F5FBFF">给你加油啦！</text>
+
+  <!-- Mood badge (pill) -->
+  <rect x="64" y="620" width="156" height="44" rx="22" fill="#FF9F4D"/>
+  <circle cx="88" cy="642" r="9" fill="#0A0E1A"/>
+  <circle cx="88" cy="637" r="4" fill="#FF9F4D"/>
+  <text x="110" y="649" font-family="sans-serif" font-size="18" font-weight="500" fill="#0A0E1A">元气满满</text>
+
+  <!-- Refs -->
+  <line x1="64" y1="704" x2="460" y2="704" stroke="#25445A" stroke-width="2"/>
+  <text x="64" y="740" font-family="sans-serif" font-size="13" font-weight="400" fill="#6F93A3">数据来源</text>
+  <text x="64" y="770" font-family="monospace" font-size="22" font-weight="500" fill="#00D4FF">LPL 2026 夏季赛</text>
+  <text x="280" y="740" font-family="sans-serif" font-size="13" font-weight="400" fill="#6F93A3">最近场次</text>
+  <text x="280" y="770" font-family="monospace" font-size="22" font-weight="500" fill="#00D4FF">VS BLG</text>
+
+  <!-- QR label and code -->
+  <text x="540" y="740" font-family="sans-serif" font-size="11" font-weight="400" fill="#9FB4C0">扫码接收今日信号</text>
+  <rect x="520" y="754" width="110" height="110" fill="#F5FBFF"/>
+  <g fill="#0A0E1A">
+    <!-- Simplified QR pattern -->
+    <rect x="530" y="764" width="26" height="26"/>
+    <rect x="594" y="764" width="26" height="26"/>
+    <rect x="530" y="828" width="26" height="26"/>
+    <rect x="550" y="790" width="12" height="12"/>
+    <rect x="574" y="806" width="8" height="8"/>
+    <rect x="590" y="800" width="16" height="16"/>
+  </g>
+  <rect x="520" y="754" width="110" height="110" fill="none" stroke="#00D4FF" stroke-width="1"/>
+
+  <!-- Footer -->
+  <text x="64" y="900" font-family="sans-serif" font-size="14" font-weight="400" fill="#9FB4C0">生成日期</text>
+  <text x="140" y="900" font-family="monospace" font-size="14" font-weight="500" fill="#9FB4C0">2026-07-20</text>
+  <text x="64" y="930" font-family="monospace" font-size="14" font-weight="500" fill="#7AA8B8">无言信号应援站</text>
+
+  <!-- Annotation callouts -->
+  <g transform="translate(0, 0)">
+    <!-- Main copy annotation -->
+    <line x1="64" y1="395" x2="40" y2="395" stroke="#FF9F4D" stroke-width="1.5"/>
+    <circle cx="40" cy="395" r="4" fill="#FF9F4D"/>
+    <rect x="8" y="380" width="120" height="30" rx="6" fill="#FF9F4D"/>
+    <text x="68" y="400" font-family="sans-serif" font-size="11" font-weight="500" fill="#0A0E1A" text-anchor="middle">黄油体主文案</text>
+
+    <!-- Grid annotation -->
+    <line x1="580" y1="200" x2="630" y2="200" stroke="#00D4FF" stroke-width="1.5"/>
+    <circle cx="630" cy="200" r="4" fill="#00D4FF"/>
+    <rect x="550" y="170" width="120" height="30" rx="6" fill="#00D4FF"/>
+    <text x="610" y="190" font-family="sans-serif" font-size="11" font-weight="500" fill="#0A0E1A" text-anchor="middle">弱化网格</text>
+
+    <!-- Mood badge annotation -->
+    <line x1="230" y1="642" x2="280" y2="642" stroke="#FF9F4D" stroke-width="1.5"/>
+    <circle cx="280" cy="642" r="4" fill="#FF9F4D"/>
+    <rect x="200" y="620" width="120" height="30" rx="6" fill="#FF9F4D"/>
+    <text x="260" y="640" font-family="sans-serif" font-size="11" font-weight="500" fill="#0A0E1A" text-anchor="middle">情绪标签 pill</text>
+
+    <!-- QR annotation -->
+    <line x1="575" y1="810" x2="630" y2="810" stroke="#00D4FF" stroke-width="1.5"/>
+    <circle cx="630" cy="810" r="4" fill="#00D4FF"/>
+    <rect x="550" y="780" width="120" height="30" rx="6" fill="#00D4FF"/>
+    <text x="610" y="800" font-family="sans-serif" font-size="11" font-weight="500" fill="#0A0E1A" text-anchor="middle">二维码关联</text>
+  </g>
+</svg>

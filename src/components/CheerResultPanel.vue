@@ -4,11 +4,12 @@ import { computed, ref, watch } from 'vue'
 import { copyText } from '../lib/clipboard'
 import { downloadCard, requiresLongPressSave } from '../lib/download'
 import { renderCheerCard, type RenderedCard } from '../lib/card-renderer'
-import type { CheerResult, Checkin } from '../types'
+import type { CheerResult, Checkin, Mood } from '../types'
 
 const props = defineProps<{
   result: CheerResult
   checkin?: Checkin
+  mood?: Mood
 }>()
 defineEmits<{ regenerate: [] }>()
 
@@ -44,7 +45,8 @@ async function handleRender() {
       refs: props.result.refs,
       sourceSnapshotAt: props.result.source_snapshot_at,
       checkin: props.checkin,
-      showQr: showQr.value
+      showQr: showQr.value,
+      mood: props.mood
     })
   } catch (error) {
     cardError.value = error instanceof Error ? error.message : '应援卡生成失败'
