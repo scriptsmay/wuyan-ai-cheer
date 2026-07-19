@@ -87,7 +87,7 @@ async function logout() {
       </h2>
       <p v-if="isAuthenticated" class="auth-intro">
         当前账号
-        <strong>{{ loginUsername || '正式用户' }}</strong> 已启用跨端同步。
+        <strong>{{ username || '正式用户' }}</strong> 已启用跨端同步。
       </p>
       <p v-else class="auth-intro">
         匿名使用无需登录。登录后，本端打卡和应援记录会迁移到管理员创建的账号。

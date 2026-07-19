@@ -88,11 +88,11 @@ function drawSignalHeader(
   checkin?: Checkin,
 ) {
   context.fillStyle = '#DFFBFF';
-  context.font = '400 66px "ZCOOL QingKe HuangYou"';
+  context.font = '400 70px "ZCOOL QingKe HuangYou"';
   context.fillText(checkin ? '每日加油信号' : '无言应援信号', 144, 190);
   context.fillStyle = '#7AA8B8';
-  context.font = '500 28px "Noto Sans SC"';
-  context.fillText('WUYAN / FAN SIGNAL STATION', 146, 238);
+  context.font = '500 32px "Noto Sans SC"';
+  context.fillText('WUYAN / FAN SIGNAL STATION', 146, 244);
 
   if (checkin) {
     context.fillStyle = '#00D4FF';
@@ -114,7 +114,7 @@ function drawMainCopy(
   context.font = '500 24px "Noto Sans SC"';
   context.fillText('SIGNAL / 01', 92, 515);
   context.fillStyle = '#F5FBFF';
-  context.font = '700 76px "ZCOOL QingKe HuangYou"';
+  context.font = '700 80px "ZCOOL QingKe HuangYou"';
   const rows = wrapText(context, line, 840);
   rows
     .slice(0, 4)
