@@ -69,8 +69,7 @@ const FAMILY_ENGLISH = '"Inter", "Noto Sans SC", sans-serif';
 
 // 主标题（黄油体，仅 400 字重）
 const FONT_TITLE_HEADER = `400 70px ${FAMILY_TITLE}`;
-// P1：主文案改用黄油体（ZCOOL QingKe HuangYou），而非原先的 HarmonyOS
-const FONT_TITLE_MAIN = `400 88px ${FAMILY_TITLE}`;
+const FONT_TITLE_MAIN = `400 80px ${FAMILY_SUBTITLE}`;
 // 英文装饰
 const FONT_ENGLISH_HEADER = `600 26px ${FAMILY_ENGLISH}`;
 const FONT_ENGLISH_EYEBROW = `600 24px ${FAMILY_ENGLISH}`;
@@ -205,33 +204,33 @@ function drawRays(
   context.restore();
 }
 
-/** 小胶囊标签（P5 ref.source / tier marker 复用） */
-function drawPill(
-  context: CanvasRenderingContext2D,
-  cx: number,
-  baselineY: number,
-  text: string,
-  font: string,
-  textColor: string,
-  borderColor: string,
-  radius = 8,
-  height = 30,
-): void {
-  context.save();
-  context.font = font;
-  const tw = context.measureText(text).width;
-  const w = tw + 28;
-  const x = cx - w / 2;
-  const y = baselineY - height + 9;
-  roundRectPath(context, x, y, w, height, radius);
-  context.lineWidth = 1;
-  context.strokeStyle = borderColor;
-  context.stroke();
-  context.textAlign = 'center';
-  context.fillStyle = textColor;
-  context.fillText(text, cx, baselineY);
-  context.restore();
-}
+// /** 小胶囊标签（P5 ref.source / tier marker 复用） */
+// function drawPill(
+//   context: CanvasRenderingContext2D,
+//   cx: number,
+//   baselineY: number,
+//   text: string,
+//   font: string,
+//   textColor: string,
+//   borderColor: string,
+//   radius = 8,
+//   height = 30,
+// ): void {
+//   context.save();
+//   context.font = font;
+//   const tw = context.measureText(text).width;
+//   const w = tw + 28;
+//   const x = cx - w / 2;
+//   const y = baselineY - height + 9;
+//   roundRectPath(context, x, y, w, height, radius);
+//   context.lineWidth = 1;
+//   context.strokeStyle = borderColor;
+//   context.stroke();
+//   context.textAlign = 'center';
+//   context.fillStyle = textColor;
+//   context.fillText(text, cx, baselineY);
+//   context.restore();
+// }
 
 /* ------------------------------------------------------------------ */
 /* 背景                                                                  */
@@ -408,7 +407,7 @@ async function drawMainCopy(
     context,
     'SIGNAL / 01',
     92,
-    515,
+    415,
     FONT_ENGLISH_EYEBROW,
     theme.primary,
   );
@@ -420,7 +419,7 @@ async function drawMainCopy(
   const wrapped = wrapText(context, line, 896);
   const rendered = wrapped.slice(0, 4);
   rendered.forEach((row, index) =>
-    context.fillText(row, 92, 620 + index * 106),
+    context.fillText(row, 92, 520 + index * 106),
   );
 
   // P4：emojiCaption 做成情绪 pill（辅色实底 + onAccent 文字），动态 y
@@ -488,18 +487,18 @@ async function drawRefs(
     await document.fonts.load(FONT_MONO_VALUE, ref.value);
     context.fillStyle = theme.primary;
     context.fillText(ref.value, x, 1194);
-    // P5：数值下方画 source 小胶囊标签
-    const vw = context.measureText(ref.value).width;
-    drawPill(
-      context,
-      x + vw / 2,
-      1232,
-      ref.source,
-      FONT_ENGLISH_META,
-      '#577485',
-      '#24435a',
-      8,
-    );
+    // // P5：数值下方画 source 小胶囊标签
+    // const vw = context.measureText(ref.value).width;
+    // drawPill(
+    //   context,
+    //   x + vw / 2,
+    //   1232,
+    //   ref.source,
+    //   FONT_ENGLISH_META,
+    //   '#577485',
+    //   '#24435a',
+    //   8,
+    // );
   }
 }
 
