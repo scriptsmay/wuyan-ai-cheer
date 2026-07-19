@@ -2,7 +2,12 @@ import { getAccessToken } from './cloudbase'
 import { getClientId } from './client-id'
 import type { ApiErrorBody, AppConfig, CheerResult, CheckinResult, CheckinStats, Mood, MyCheckin } from '../types'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.replace(/\/$/u, '')
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL.replace(/\/$/u, '')
+const useVercelProxy = import.meta.env.PROD && (
+  window.location.hostname === 'cheer.kplwuyan.site' ||
+  window.location.hostname.endsWith('.vercel.app')
+)
+const API_BASE_URL = useVercelProxy ? window.location.origin : configuredApiBaseUrl
 
 export class ApiError extends Error {
   readonly status: number
