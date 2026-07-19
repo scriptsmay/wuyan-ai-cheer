@@ -96,7 +96,7 @@ function handleError(error: unknown) {
         <div><span>累计加油</span><b>{{ me?.total_days ?? '—' }}</b><small>天</small></div>
       </div>
 
-      <button class="checkin-trigger" type="button" :disabled="status === 'loading'" @click="checkIn(false)">
+      <button class="checkin-trigger" type="button" :disabled="status === 'loading'" @click="checkIn(!!me?.checked_in_today)">
         <RadioTower :size="31" />
         <span>
           <strong>{{ me?.checked_in_today ? '重新生成今日加油卡' : '发送今日加油信号' }}</strong>

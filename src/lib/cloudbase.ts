@@ -20,6 +20,7 @@ export const cloudbaseAuth = cloudbaseApp.auth({ persistence: 'local' })
 interface SessionUser {
   id?: string
   uid?: string
+  name?: string
   username?: string
   is_anonymous?: boolean
   isAnonymous?: boolean
@@ -70,7 +71,7 @@ export async function getAuthSnapshot(): Promise<AuthSnapshot> {
     mode: isAnonymousUser(user) ? 'anonymous' : 'authenticated',
     accessToken,
     uid,
-    username: String(user?.username || '').trim()
+    username: String(user?.name || user?.username || '').trim()
   }
 }
 
