@@ -5,6 +5,7 @@
 //
 // install/build commands and framework come from cloudbaserc.json
 // (installCommand/buildCommand empty => skip cloud build, upload local dist).
+/* global process */
 import { spawnSync } from 'node:child_process'
 
 const args = [

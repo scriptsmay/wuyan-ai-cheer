@@ -1,8 +1,36 @@
 <script setup lang="ts">
-import { Radio, ShieldCheck } from 'lucide-vue-next'
+import { LogIn, Radio, ShieldCheck, UserRound } from 'lucide-vue-next'
 import { RouterLink, useRoute } from 'vue-router'
+import { onMounted, onUnmounted, ref } from 'vue'
+import AuthDialog from './AuthDialog.vue'
+import { cloudbaseAuth, getAuthSnapshot, type AuthMode } from '../lib/cloudbase'
 
 const route = useRoute()
+const authOpen = ref(false)
+const authMode = ref<AuthMode>('signed-out')
+const authUsername = ref('')
+let subscription: { unsubscribe: () => void } | undefined
+
+async function refreshAuth() {
+  try {
+    const snapshot = await getAuthSnapshot()
+    authMode.value = snapshot.mode
+    authUsername.value = snapshot.username
+  } catch {
+    authMode.value = 'signed-out'
+    authUsername.value = ''
+  }
+}
+
+function handleAuthChange() {
+  void refreshAuth()
+}
+
+onMounted(() => {
+  void refreshAuth()
+  subscription = cloudbaseAuth.onAuthStateChange(handleAuthChange).data.subscription
+})
+onUnmounted(() => subscription?.unsubscribe())
 </script>
 
 <template>
@@ -21,7 +49,12 @@ const route = useRoute()
         <RouterLink :class="{ active: route.name === 'secretary' }" to="/secretary">智能问答</RouterLink>
         <RouterLink :class="{ active: route.name === 'checkin' }" to="/checkin">每日打卡</RouterLink>
       </nav>
-      <span class="security-chip"><ShieldCheck :size="15" /> 匿名会话</span>
+      <button class="security-chip auth-trigger" type="button" @click="authOpen = true">
+        <UserRound v-if="authMode === 'authenticated'" :size="15" />
+        <ShieldCheck v-else :size="15" />
+        {{ authMode === 'authenticated' ? authUsername || '已登录' : '登录 / 跨端同步' }}
+        <LogIn v-if="authMode !== 'authenticated'" :size="14" />
+      </button>
     </header>
 
     <main>
@@ -33,4 +66,5 @@ const route = useRoute()
       <span>图片与文案由用户自主保存发布</span>
     </footer>
   </div>
+  <AuthDialog :open="authOpen" :mode="authMode" :username="authUsername" @close="authOpen = false" @changed="handleAuthChange" />
 </template>

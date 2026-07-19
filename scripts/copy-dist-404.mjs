@@ -1,3 +1,4 @@
+/* global process */
 import { copyFileSync, existsSync } from 'node:fs'
 
 // SPA history-mode fallback: CloudBase static hosting serves 404.html on

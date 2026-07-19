@@ -104,8 +104,8 @@ function handleDownload() {
       </div>
       <label v-if="card" class="qr-toggle" :class="{ disabled: cardLoading }">
         <span class="toggle-track" role="switch" :aria-checked="showQr" tabindex="0" @click="cardLoading || (showQr = !showQr) || handleRender()">
-          <input type="checkbox" v-model="showQr" :disabled="cardLoading" class="toggle-input" @change="handleRender" />
-          <span class="toggle-thumb"></span>
+          <input v-model="showQr" type="checkbox" :disabled="cardLoading" class="toggle-input" @change="handleRender" />
+          <span class="toggle-thumb" />
         </span>
         <span class="toggle-label">显示二维码</span>
       </label>

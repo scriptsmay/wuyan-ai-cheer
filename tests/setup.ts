@@ -1,17 +1,33 @@
-import { vi } from 'vitest'
+class TestFontFace {
+  family: string
+  source: string
 
-Object.defineProperty(document, 'fonts', {
-  configurable: true,
-  value: { ready: Promise.resolve() }
-})
+  constructor(family: string, source: string) {
+    this.family = family
+    this.source = source
+  }
 
-vi.stubGlobal('matchMedia', (query: string) => ({
-  matches: false,
-  media: query,
-  onchange: null,
-  addListener: vi.fn(),
-  removeListener: vi.fn(),
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-  dispatchEvent: vi.fn()
-}))
+  async load(): Promise<TestFontFace> {
+    return this
+  }
+}
+
+if (!('FontFace' in globalThis)) {
+  Object.defineProperty(globalThis, 'FontFace', { value: TestFontFace })
+}
+
+if (typeof document !== 'undefined' && !document.fonts) {
+  Object.defineProperty(document, 'fonts', { value: { ready: Promise.resolve() } })
+}
+
+if (!globalThis.localStorage) {
+  const values = new Map<string, string>()
+  Object.defineProperty(globalThis, 'localStorage', {
+    value: {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, String(value)),
+      removeItem: (key: string) => values.delete(key),
+      clear: () => values.clear()
+    }
+  })
+}

@@ -1,6 +1,6 @@
 import { getAccessToken } from './cloudbase'
 import { getClientId } from './client-id'
-import type { ApiErrorBody, AppConfig, CheerResult, CheckinResult, CheckinStats, Mood, MyCheckin } from '../types'
+import type { ApiErrorBody, AppConfig, AuthMe, CheerResult, CheckinResult, CheckinStats, Mood, MyCheckin, TransferComplete, TransferStart } from '../types'
 
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL.replace(/\/$/u, '')
 const useVercelProxy = import.meta.env.PROD && (
@@ -29,10 +29,12 @@ interface RequestOptions {
   method?: 'GET' | 'POST'
   body?: Record<string, unknown>
   auth?: boolean
+  authRetry?: boolean
   requestId?: string
 }
 
-async function apiRequest<T>(path: string, options: RequestOptions = {}, authRetry = true): Promise<T> {
+async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const shouldRetryAuth = options.authRetry !== false
   const requestId = options.requestId || crypto.randomUUID()
   const headers: Record<string, string> = {
     Accept: 'application/json',
@@ -58,9 +60,9 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}, authRet
     throw new ApiError(0, { code: 'NETWORK_ERROR', message, request_id: requestId })
   }
 
-  if (response.status === 401 && options.auth !== false && authRetry) {
+  if (response.status === 401 && options.auth !== false && shouldRetryAuth) {
     await getAccessToken(true)
-    return apiRequest<T>(path, options, false)
+    return apiRequest<T>(path, { ...options, authRetry: false })
   }
 
   let payload: unknown
@@ -138,4 +140,20 @@ export function askQuestion(q: string, requestId: string): Promise<{ answer: str
 
 export function getConfig(): Promise<AppConfig> {
   return apiRequest<AppConfig>('/api/config', { auth: false })
+}
+
+export function getAuthMe(): Promise<AuthMe> {
+  return apiRequest<AuthMe>('/api/auth/me')
+}
+
+export function startAuthTransfer(): Promise<TransferStart> {
+  return apiRequest<TransferStart>('/api/auth/transfer/start', { method: 'POST', body: {}, authRetry: false })
+}
+
+export function completeAuthTransfer(ticket: string): Promise<TransferComplete> {
+  return apiRequest<TransferComplete>('/api/auth/transfer/complete', {
+    method: 'POST',
+    body: { ticket },
+    authRetry: false
+  })
 }

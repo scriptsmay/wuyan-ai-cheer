@@ -19,7 +19,10 @@ export const cloudbaseAuth = cloudbaseApp.auth({ persistence: 'local' })
 
 interface SessionUser {
   id?: string
+  uid?: string
+  username?: string
   is_anonymous?: boolean
+  isAnonymous?: boolean
 }
 
 interface SessionShape {
@@ -32,6 +35,43 @@ function readSession(value: unknown): SessionShape | undefined {
   const session = value.session
   if (!session || typeof session !== 'object') return undefined
   return session as SessionShape
+}
+
+export type AuthMode = 'anonymous' | 'authenticated' | 'signed-out'
+
+export interface AuthSnapshot {
+  mode: AuthMode
+  accessToken: string
+  uid: string
+  username: string
+}
+
+function readUser(session: SessionShape | undefined): SessionUser | undefined {
+  return session?.user
+}
+
+function readUid(user: SessionUser | undefined): string {
+  return String(user?.id || user?.uid || '').trim()
+}
+
+function isAnonymousUser(user: SessionUser | undefined): boolean {
+  return Boolean(user?.is_anonymous || user?.isAnonymous)
+}
+
+export async function getAuthSnapshot(): Promise<AuthSnapshot> {
+  const result = await cloudbaseAuth.getSession()
+  if (result.error) throw new Error(result.error.message || '读取会话失败')
+  const session = readSession(result.data)
+  const user = readUser(session)
+  const accessToken = session?.access_token || ''
+  const uid = readUid(user)
+  if (!accessToken || !uid) return { mode: 'signed-out', accessToken: '', uid: '', username: '' }
+  return {
+    mode: isAnonymousUser(user) ? 'anonymous' : 'authenticated',
+    accessToken,
+    uid,
+    username: String(user?.username || '').trim()
+  }
 }
 
 export async function getAccessToken(forceRefresh = false): Promise<string> {
@@ -47,7 +87,7 @@ export async function getAccessToken(forceRefresh = false): Promise<string> {
   if (sessionResult.error) throw new Error(sessionResult.error.message || '读取会话失败')
   let session = readSession(sessionResult.data)
 
-  if (forceRefresh || !session?.access_token) {
+  if (!session?.access_token) {
     const signInResult = await cloudbaseAuth.signInAnonymously()
     if (signInResult.error) throw new Error(signInResult.error.message || '匿名会话建立失败')
     sessionResult = await cloudbaseAuth.getSession()
@@ -55,6 +95,18 @@ export async function getAccessToken(forceRefresh = false): Promise<string> {
     session = readSession(sessionResult.data)
   }
 
-  if (!session?.access_token) throw new Error('未取得匿名会话 access token')
+  if (!session?.access_token) throw new Error('未取得会话 access token')
   return session.access_token
+}
+
+export async function signInWithPassword(username: string, password: string): Promise<void> {
+  const result = await cloudbaseAuth.signInWithPassword({ username, password })
+  if (result.error) throw new Error(result.error.message || '用户名或密码错误')
+}
+
+export async function signOut(): Promise<void> {
+  const result = await cloudbaseAuth.signOut()
+  if (result && typeof result === 'object' && 'error' in result && result.error) {
+    throw new Error(result.error.message || '退出登录失败')
+  }
 }

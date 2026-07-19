@@ -63,3 +63,27 @@ export interface AppConfig {
   ask_daily_limit?: number
   cheer_daily_limit?: number
 }
+
+export interface AuthMe {
+  uid: string
+  username: string
+  mode: 'anonymous' | 'authenticated'
+  migrated_at?: string
+}
+
+export interface TransferStart {
+  transfer_id: string
+  ticket: string
+  expires_at: string
+  source_uid: string
+}
+
+export interface TransferComplete {
+  transfer_id: string
+  migrated: {
+    checkins: number
+    users: number
+    ai_reports: number
+  }
+  completed_at: string
+}
