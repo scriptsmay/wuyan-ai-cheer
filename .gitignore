@@ -6,4 +6,4 @@ coverage/
 .env.production
 *.log
 .DS_Store
-
+.workbuddy/

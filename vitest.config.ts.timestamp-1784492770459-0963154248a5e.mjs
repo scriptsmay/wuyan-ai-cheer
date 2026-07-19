@@ -1,0 +1,15 @@
+// vitest.config.ts
+import { defineConfig } from "file:///Users/virola/code/projects/wuyan-ai-cheer/node_modules/vitest/dist/config.js";
+import vue from "file:///Users/virola/code/projects/wuyan-ai-cheer/node_modules/@vitejs/plugin-vue/dist/index.mjs";
+var vitest_config_default = defineConfig({
+  plugins: [vue()],
+  test: {
+    environment: "jsdom",
+    environmentOptions: { jsdom: { url: "http://localhost/" } },
+    setupFiles: ["./tests/setup.ts"]
+  }
+});
+export {
+  vitest_config_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsidml0ZXN0LmNvbmZpZy50cyJdLAogICJzb3VyY2VzQ29udGVudCI6IFsiY29uc3QgX192aXRlX2luamVjdGVkX29yaWdpbmFsX2Rpcm5hbWUgPSBcIi9Vc2Vycy92aXJvbGEvY29kZS9wcm9qZWN0cy93dXlhbi1haS1jaGVlclwiO2NvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9maWxlbmFtZSA9IFwiL1VzZXJzL3Zpcm9sYS9jb2RlL3Byb2plY3RzL3d1eWFuLWFpLWNoZWVyL3ZpdGVzdC5jb25maWcudHNcIjtjb25zdCBfX3ZpdGVfaW5qZWN0ZWRfb3JpZ2luYWxfaW1wb3J0X21ldGFfdXJsID0gXCJmaWxlOi8vL1VzZXJzL3Zpcm9sYS9jb2RlL3Byb2plY3RzL3d1eWFuLWFpLWNoZWVyL3ZpdGVzdC5jb25maWcudHNcIjtpbXBvcnQgeyBkZWZpbmVDb25maWcgfSBmcm9tICd2aXRlc3QvY29uZmlnJ1xuaW1wb3J0IHZ1ZSBmcm9tICdAdml0ZWpzL3BsdWdpbi12dWUnXG5cbmV4cG9ydCBkZWZhdWx0IGRlZmluZUNvbmZpZyh7XG4gIHBsdWdpbnM6IFt2dWUoKV0sXG4gIHRlc3Q6IHtcbiAgICBlbnZpcm9ubWVudDogJ2pzZG9tJyxcbiAgICBlbnZpcm9ubWVudE9wdGlvbnM6IHsganNkb206IHsgdXJsOiAnaHR0cDovL2xvY2FsaG9zdC8nIH0gfSxcbiAgICBzZXR1cEZpbGVzOiBbJy4vdGVzdHMvc2V0dXAudHMnXVxuICB9XG59KVxuIl0sCiAgIm1hcHBpbmdzIjogIjtBQUFvVCxTQUFTLG9CQUFvQjtBQUNqVixPQUFPLFNBQVM7QUFFaEIsSUFBTyx3QkFBUSxhQUFhO0FBQUEsRUFDMUIsU0FBUyxDQUFDLElBQUksQ0FBQztBQUFBLEVBQ2YsTUFBTTtBQUFBLElBQ0osYUFBYTtBQUFBLElBQ2Isb0JBQW9CLEVBQUUsT0FBTyxFQUFFLEtBQUssb0JBQW9CLEVBQUU7QUFBQSxJQUMxRCxZQUFZLENBQUMsa0JBQWtCO0FBQUEsRUFDakM7QUFDRixDQUFDOyIsCiAgIm5hbWVzIjogW10KfQo=
