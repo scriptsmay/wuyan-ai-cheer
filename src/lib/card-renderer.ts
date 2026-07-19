@@ -10,6 +10,7 @@ interface CardInput {
   refs: CheerRef[]
   sourceSnapshotAt: string
   checkin?: Checkin
+  showQr?: boolean
 }
 
 export interface RenderedCard {
@@ -125,16 +126,18 @@ function drawRefs(context: CanvasRenderingContext2D, refs: CheerRef[]) {
 }
 
 async function drawFooter(context: CanvasRenderingContext2D, input: CardInput) {
-  const siteUrl = new URL('/cheer', import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin).toString()
-  const qrDataUrl = await QRCode.toDataURL(siteUrl, {
-    width: 176,
-    margin: 1,
-    color: { dark: '#0A0E1AFF', light: '#F5FBFFFF' }
-  })
-  const qr = await loadImage(qrDataUrl)
-  context.fillStyle = '#F5FBFF'
-  context.fillRect(812, 1170, 188, 188)
-  context.drawImage(qr, 818, 1176, 176, 176)
+  if (input.showQr !== false) {
+    const siteUrl = new URL('/cheer', import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin).toString()
+    const qrDataUrl = await QRCode.toDataURL(siteUrl, {
+      width: 176,
+      margin: 1,
+      color: { dark: '#0A0E1AFF', light: '#F5FBFFFF' }
+    })
+    const qr = await loadImage(qrDataUrl)
+    context.fillStyle = '#F5FBFF'
+    context.fillRect(812, 1170, 188, 188)
+    context.drawImage(qr, 818, 1176, 176, 176)
+  }
 
   context.fillStyle = '#587483'
   context.font = '400 22px "Noto Sans SC"'

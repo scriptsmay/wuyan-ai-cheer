@@ -17,6 +17,7 @@ const copied = ref(false)
 const card = ref<RenderedCard | null>(null)
 const cardLoading = ref(false)
 const cardError = ref('')
+const showQr = ref(true)
 
 const selectedLine = computed(() => props.result.lines[selectedIndex.value] || props.result.lines[0] || '')
 const combinedCopy = computed(() => `${selectedLine.value}\n${props.result.emoji_caption}`.trim())
@@ -42,7 +43,8 @@ async function handleRender() {
       emojiCaption: props.result.emoji_caption,
       refs: props.result.refs,
       sourceSnapshotAt: props.result.source_snapshot_at,
-      checkin: props.checkin
+      checkin: props.checkin,
+      showQr: showQr.value
     })
   } catch (error) {
     cardError.value = error instanceof Error ? error.message : '应援卡生成失败'
@@ -100,6 +102,13 @@ function handleDownload() {
         <img :src="card.dataUrl" alt="生成的 3:4 无言应援卡预览" />
         <p v-if="requiresLongPressSave()" class="save-hint">请长按上方图片保存到相册</p>
       </div>
+      <label v-if="card" class="qr-toggle" :class="{ disabled: cardLoading }">
+        <span class="toggle-track" role="switch" :aria-checked="showQr" tabindex="0" @click="cardLoading || (showQr = !showQr) || handleRender()">
+          <input type="checkbox" v-model="showQr" :disabled="cardLoading" class="toggle-input" @change="handleRender" />
+          <span class="toggle-thumb"></span>
+        </span>
+        <span class="toggle-label">显示二维码</span>
+      </label>
       <button v-else class="card-placeholder" type="button" :disabled="cardLoading" @click="handleRender">
         <ImageIcon :size="44" />
         <strong>{{ cardLoading ? '正在合成 1080 × 1440 图片' : '点击生成应援卡' }}</strong>
