@@ -1,139 +1,205 @@
-import cloudbase from '@cloudbase/js-sdk'
+import cloudbase from "@cloudbase/js-sdk";
 
-const env = import.meta.env.VITE_CLOUDBASE_ENV_ID
-const region = import.meta.env.VITE_CLOUDBASE_REGION
-const accessKey = import.meta.env.VITE_CLOUDBASE_ACCESS_KEY
+const env = import.meta.env.VITE_CLOUDBASE_ENV_ID;
+const region = import.meta.env.VITE_CLOUDBASE_REGION;
+const accessKey = import.meta.env.VITE_CLOUDBASE_ACCESS_KEY;
 
-if (!env || !region || !accessKey || accessKey === 'replace-with-publishable-key') {
-  throw new Error('CloudBase Web 认证配置不完整')
+if (
+  !env ||
+  !region ||
+  !accessKey ||
+  accessKey === "replace-with-publishable-key"
+) {
+  throw new Error("CloudBase Web 认证配置不完整");
 }
 
 export const cloudbaseApp = cloudbase.init({
   env,
   region,
   accessKey,
-  auth: { detectSessionInUrl: true }
-})
+  auth: { detectSessionInUrl: true },
+});
 
-export const cloudbaseAuth = cloudbaseApp.auth({ persistence: 'local' })
+export const cloudbaseAuth = cloudbaseApp.auth({ persistence: "local" });
 
 interface SessionUser {
-  id?: string
-  uid?: string
-  name?: string
-  username?: string
-  is_anonymous?: boolean
-  isAnonymous?: boolean
+  id?: string;
+  uid?: string;
+  name?: string;
+  username?: string;
+  is_anonymous?: boolean;
+  isAnonymous?: boolean;
 }
 
 interface SessionShape {
-  access_token?: string
-  user?: SessionUser
+  access_token?: string;
+  user?: SessionUser;
 }
 
 function readSession(value: unknown): SessionShape | undefined {
-  if (!value || typeof value !== 'object' || !('session' in value)) return undefined
-  const session = value.session
-  if (!session || typeof session !== 'object') return undefined
-  return session as SessionShape
+  if (!value || typeof value !== "object" || !("session" in value))
+    return undefined;
+  const session = value.session;
+  if (!session || typeof session !== "object") return undefined;
+  return session as SessionShape;
 }
 
-export type AuthMode = 'anonymous' | 'authenticated' | 'signed-out'
+export type AuthMode = "anonymous" | "authenticated" | "signed-out";
 
 export interface AuthSnapshot {
-  mode: AuthMode
-  accessToken: string
-  uid: string
-  username: string
+  mode: AuthMode;
+  accessToken: string;
+  uid: string;
+  username: string;
 }
 
 function readUser(session: SessionShape | undefined): SessionUser | undefined {
-  return session?.user
+  return session?.user;
 }
 
 function readUid(user: SessionUser | undefined): string {
-  return String(user?.id || user?.uid || '').trim()
+  return String(user?.id || user?.uid || "").trim();
 }
 
 function isAnonymousUser(user: SessionUser | undefined): boolean {
-  return Boolean(user?.is_anonymous || user?.isAnonymous)
+  return Boolean(user?.is_anonymous || user?.isAnonymous);
 }
 
 export async function getAuthSnapshot(): Promise<AuthSnapshot> {
-  const result = await cloudbaseAuth.getSession()
-  if (result.error) throw new Error(result.error.message || '读取会话失败')
-  const session = readSession(result.data)
-  const user = readUser(session)
-  const accessToken = session?.access_token || ''
-  const uid = readUid(user)
-  if (!accessToken || !uid) return { mode: 'signed-out', accessToken: '', uid: '', username: '' }
+  const result = await cloudbaseAuth.getSession();
+  if (result.error) throw new Error(result.error.message || "读取会话失败");
+  const session = readSession(result.data);
+  const user = readUser(session);
+  const accessToken = session?.access_token || "";
+  const uid = readUid(user);
+  if (!accessToken || !uid)
+    return { mode: "signed-out", accessToken: "", uid: "", username: "" };
   return {
-    mode: isAnonymousUser(user) ? 'anonymous' : 'authenticated',
+    mode: isAnonymousUser(user) ? "anonymous" : "authenticated",
     accessToken,
     uid,
-    username: guessUsername(user)
-  }
+    username: guessUsername(user),
+  };
 }
 
 function guessUsername(user: SessionUser | undefined): string {
-  const fromSession = String(user?.name || user?.username || '').trim()
-  if (fromSession) return fromSession
+  const fromSession = String(user?.name || user?.username || "").trim();
+  if (fromSession) return fromSession;
 
   // CloudBase SDK stores user profile separately from session data.
   // Try reading from @cloudbase/js-sdk internal currentUser state.
   try {
-    const currentUser = (cloudbaseAuth as unknown as Record<string, unknown>).currentUser as Record<string, unknown> | undefined
+    const currentUser = (cloudbaseAuth as unknown as Record<string, unknown>)
+      .currentUser as Record<string, unknown> | undefined;
     if (currentUser) {
-      const name = String(currentUser.name || currentUser.username || '').trim()
-      if (name) return name
+      const name = String(
+        currentUser.name || currentUser.username || "",
+      ).trim();
+      if (name) return name;
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 
   // Fallback: read from the user_info localStorage key written by the SDK.
   try {
-    const raw = localStorage.getItem(`user_info_${env}`)
+    const raw = localStorage.getItem(`user_info_${env}`);
     if (raw) {
-      const info = JSON.parse(raw) as Record<string, unknown>
-      return String(info.name || info.username || '').trim()
+      const info = JSON.parse(raw) as Record<string, unknown>;
+      return String(info.name || info.username || "").trim();
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 
-  return ''
+  return "";
 }
 
 export async function getAccessToken(forceRefresh = false): Promise<string> {
   if (forceRefresh) {
-    const refreshed = await cloudbaseAuth.refreshSession()
+    const refreshed = await cloudbaseAuth.refreshSession();
     if (!refreshed.error) {
-      const refreshedSession = readSession(refreshed.data)
-      if (refreshedSession?.access_token) return refreshedSession.access_token
+      const refreshedSession = readSession(refreshed.data);
+      if (refreshedSession?.access_token) return refreshedSession.access_token;
     }
   }
 
-  let sessionResult = await cloudbaseAuth.getSession()
-  if (sessionResult.error) throw new Error(sessionResult.error.message || '读取会话失败')
-  let session = readSession(sessionResult.data)
+  let sessionResult = await cloudbaseAuth.getSession();
+  if (sessionResult.error)
+    throw new Error(sessionResult.error.message || "读取会话失败");
+  let session = readSession(sessionResult.data);
 
   if (!session?.access_token) {
-    const signInResult = await cloudbaseAuth.signInAnonymously()
-    if (signInResult.error) throw new Error(signInResult.error.message || '匿名会话建立失败')
-    sessionResult = await cloudbaseAuth.getSession()
-    if (sessionResult.error) throw new Error(sessionResult.error.message || '读取匿名会话失败')
-    session = readSession(sessionResult.data)
+    const signInResult = await cloudbaseAuth.signInAnonymously();
+    if (signInResult.error)
+      throw new Error(signInResult.error.message || "匿名会话建立失败");
+    sessionResult = await cloudbaseAuth.getSession();
+    if (sessionResult.error)
+      throw new Error(sessionResult.error.message || "读取匿名会话失败");
+    session = readSession(sessionResult.data);
   }
 
-  if (!session?.access_token) throw new Error('未取得会话 access token')
-  return session.access_token
+  if (!session?.access_token) throw new Error("未取得会话 access token");
+  return session.access_token;
 }
 
-export async function signInWithPassword(username: string, password: string): Promise<void> {
-  const result = await cloudbaseAuth.signInWithPassword({ username, password })
-  if (result.error) throw new Error(result.error.message || '用户名或密码错误')
+export async function signInWithPassword(
+  username: string,
+  password: string,
+): Promise<void> {
+  const result = await cloudbaseAuth.signInWithPassword({ username, password });
+  if (result.error) throw new Error(result.error.message || "用户名或密码错误");
 }
 
 export async function signOut(): Promise<void> {
-  const result = await cloudbaseAuth.signOut()
-  if (result && typeof result === 'object' && 'error' in result && result.error) {
-    throw new Error(result.error.message || '退出登录失败')
+  const result = await cloudbaseAuth.signOut();
+  if (
+    result &&
+    typeof result === "object" &&
+    "error" in result &&
+    result.error
+  ) {
+    throw new Error(result.error.message || "退出登录失败");
+  }
+}
+
+/**
+ * 清除当前会话，保证后续登录在全新上下文进行。
+ *
+ * SDK 的 signOut() 在 @cloudbase/js-sdk@2.31.0 内部会先请求云端 revoke，
+ * revoke 失败时直接返回 error、不会清 credentials/user_info localStorage ——
+ * 只在网络调用成功（或本身就未登录）之后才会 removeStore(userInfoKey)。
+ *
+ * 登录前的清理策略：
+ *   1. 先调 signOut()。
+ *   2. 如果失败，再用 getSession() 验证本地是否已无有效会话；
+ *      无 → 当作已退出继续后续流程；
+ *      有 → 这是真正的失败（旧 session 仍驻留），要抛给调用方决定，
+ *      不能继续 signInWithPassword，否则会在旧上下文中登录。
+ */
+export async function clearSession(): Promise<void> {
+  try {
+    await signOut();
+    return;
+  } catch (signOutError) {
+    let activeSession = false;
+    try {
+      const after = await cloudbaseAuth.getSession();
+      if (!after.error) {
+        const session = readSession(after.data);
+        activeSession = Boolean(session?.access_token);
+      }
+    } catch {
+      // getSession 抛出说明本地状态已无法读取，当作需要用户处理
+      activeSession = true;
+    }
+
+    if (activeSession) {
+      throw new Error(
+        signOutError instanceof Error && signOutError.message
+          ? signOutError.message
+          : "退出登录失败：旧会话仍驻留，请重试",
+      );
+    }
   }
 }

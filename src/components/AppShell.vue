@@ -1,36 +1,45 @@
 <script setup lang="ts">
-import { LogIn, Radio, ShieldCheck, UserRound } from 'lucide-vue-next'
-import { RouterLink, useRoute } from 'vue-router'
-import { onMounted, onUnmounted, ref } from 'vue'
-import AuthDialog from './AuthDialog.vue'
-import { cloudbaseAuth, getAuthSnapshot, type AuthMode } from '../lib/cloudbase'
+import { LogIn, Radio, ShieldCheck, UserRound } from "lucide-vue-next";
+import { RouterLink, useRoute } from "vue-router";
+import { onMounted, onUnmounted, ref } from "vue";
+import AuthDialog from "./AuthDialog.vue";
+import {
+  cloudbaseAuth,
+  getAuthSnapshot,
+  type AuthMode,
+} from "../lib/cloudbase";
 
-const route = useRoute()
-const authOpen = ref(false)
-const authMode = ref<AuthMode>('signed-out')
-const authUsername = ref('')
-let subscription: { unsubscribe: () => void } | undefined
+const route = useRoute();
+const authOpen = ref(false);
+const authMode = ref<AuthMode>("signed-out");
+const authUsername = ref("");
+let subscription: { unsubscribe: () => void } | undefined;
 
 async function refreshAuth() {
   try {
-    const snapshot = await getAuthSnapshot()
-    authMode.value = snapshot.mode
-    authUsername.value = snapshot.username
+    const snapshot = await getAuthSnapshot();
+    authMode.value = snapshot.mode;
+    authUsername.value = snapshot.username;
   } catch {
-    authMode.value = 'signed-out'
-    authUsername.value = ''
+    authMode.value = "signed-out";
+    authUsername.value = "";
   }
 }
 
 function handleAuthChange() {
-  void refreshAuth()
+  void refreshAuth();
+}
+
+function handleAuthChanged() {
+  window.location.reload();
 }
 
 onMounted(() => {
-  void refreshAuth()
-  subscription = cloudbaseAuth.onAuthStateChange(handleAuthChange).data.subscription
-})
-onUnmounted(() => subscription?.unsubscribe())
+  void refreshAuth();
+  subscription =
+    cloudbaseAuth.onAuthStateChange(handleAuthChange).data.subscription;
+});
+onUnmounted(() => subscription?.unsubscribe());
 </script>
 
 <template>
@@ -45,14 +54,29 @@ onUnmounted(() => subscription?.unsubscribe())
         </span>
       </RouterLink>
       <nav aria-label="主导航">
-        <RouterLink :class="{ active: route.name === 'cheer' }" to="/cheer">生成应援</RouterLink>
-        <RouterLink :class="{ active: route.name === 'secretary' }" to="/secretary">智能问答</RouterLink>
-        <RouterLink :class="{ active: route.name === 'checkin' }" to="/checkin">每日打卡</RouterLink>
+        <RouterLink :class="{ active: route.name === 'cheer' }" to="/cheer">
+          生成应援
+        </RouterLink>
+        <RouterLink
+          :class="{ active: route.name === 'secretary' }"
+          to="/secretary"
+        >
+          智能问答
+        </RouterLink>
+        <RouterLink :class="{ active: route.name === 'checkin' }" to="/checkin">
+          每日打卡
+        </RouterLink>
       </nav>
-      <button class="security-chip auth-trigger" type="button" @click="authOpen = true">
+      <button
+        class="security-chip auth-trigger"
+        type="button"
+        @click="authOpen = true"
+      >
         <UserRound v-if="authMode === 'authenticated'" :size="15" />
         <ShieldCheck v-else :size="15" />
-        {{ authMode === 'authenticated' ? authUsername || '已登录' : '登录 / 跨端同步' }}
+        {{
+          authMode === "authenticated" ? authUsername || "已登录" : "登录账号"
+        }}
         <LogIn v-if="authMode !== 'authenticated'" :size="14" />
       </button>
     </header>
@@ -66,5 +90,11 @@ onUnmounted(() => subscription?.unsubscribe())
       <span>图片与文案由用户自主保存发布</span>
     </footer>
   </div>
-  <AuthDialog :open="authOpen" :mode="authMode" :username="authUsername" @close="authOpen = false" @changed="handleAuthChange" />
+  <AuthDialog
+    :open="authOpen"
+    :mode="authMode"
+    :username="authUsername"
+    @close="authOpen = false"
+    @changed="handleAuthChanged"
+  />
 </template>
