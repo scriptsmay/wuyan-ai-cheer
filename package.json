@@ -24,6 +24,7 @@
     "@fontsource/zcool-qingke-huangyou": "^5.2.8",
     "harmonyos-sans-sc-webfont-splitted": "^1.1.0",
     "lucide-vue-next": "^0.468.0",
+    "lxgw-wenkai-screen-webfont": "^1.7.0",
     "qrcode": "^1.5.4",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"

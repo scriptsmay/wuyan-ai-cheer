@@ -50,13 +50,16 @@ function resolveTheme(mood?: Mood): CardTheme {
 
 /**
  * 字体展示方案
- * - 主标题 / 主文案（有情绪的文字）：ZCOOL QingKe HuangYou（黄油体）
+ * - 主标题（顶部「每日加油信号 / 无言应援信号」）：ZCOOL QingKe HuangYou（黄油体）
+ * - 主文案（line，约 30 字正文）：LXGW WenKai Screen（霞鹜文楷屏幕版，Regular 400）
  * - 副标题（caption / 状态行的中文）：HarmonyOS Sans SC Medium
  * - 正文（标签、说明文字）：Source Han Sans（= Noto Sans SC）Regular
  * - 数字（日期、连续天数、时间、数据值）：JetBrains Mono
  * - 英文装饰（SIGNAL、ONLINE、KEEP GOING 等）：Inter
  *
  * 说明：
+ * - 霞鹜文楷屏幕版通过 `lxgw-wenkai-screen-webfont` 按字形区间拆分为 97 个子集，
+ *   浏览器在绘制时会按实际文字按需拉取对应子集，不会一次性下载全部字形。
  * - HarmonyOS Sans SC 通过 `harmonyos-sans-sc-webfont-splitted` 按字形区间拆分为多子集，
  *   浏览器在绘制时会按实际文字按需拉取对应子集，不会一次性下载全部字形。
  * - 各字体族都带「Noto Sans SC / 系统字体」兜底，避免个别字形缺失时直接掉到默认字体。
@@ -66,10 +69,13 @@ const FAMILY_SUBTITLE = '"HarmonyOS Sans SC", "Noto Sans SC", sans-serif';
 const FAMILY_BODY = '"Noto Sans SC", sans-serif';
 const FAMILY_MONO = '"JetBrains Mono", "Noto Sans SC", monospace';
 const FAMILY_ENGLISH = '"Inter", "Noto Sans SC", sans-serif';
+// 霞鹜文楷屏幕版（主文案正文，约 30 字）。带 Noto Sans SC 兜底，避免极个别缺失字形掉默认字体。
+const FAMILY_WENKAI = '"LXGW WenKai Screen", "Noto Sans SC", sans-serif';
 
 // 主标题（黄油体，仅 400 字重）
 const FONT_TITLE_HEADER = `400 70px ${FAMILY_TITLE}`;
-const FONT_TITLE_MAIN = `400 80px ${FAMILY_SUBTITLE}`;
+// 主文案（霞鹜文楷屏幕版 Regular 400，仅 400 字重）
+const FONT_TITLE_MAIN = `400 80px ${FAMILY_WENKAI}`;
 // 英文装饰
 const FONT_ENGLISH_HEADER = `600 26px ${FAMILY_ENGLISH}`;
 const FONT_ENGLISH_EYEBROW = `600 24px ${FAMILY_ENGLISH}`;

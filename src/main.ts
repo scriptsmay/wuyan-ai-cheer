@@ -6,6 +6,10 @@ import '@fontsource/noto-sans-sc/latin-500.css'
 import '@fontsource/noto-sans-sc/latin-700.css'
 import '@fontsource/zcool-qingke-huangyou/chinese-simplified-400.css'
 import '@fontsource/zcool-qingke-huangyou/latin-400.css'
+// 霞鹜文楷屏幕版（LXGW WenKai Screen，主文案正文）。仅引入 screen 常规子集 CSS，
+// 该包按 unicode-range 拆分为 97 个子集，运行时仅按需拉取用到的字形块。
+// （注意：不要引聚合的 style.css，它还会额外拉入 gb / r 变体）
+import 'lxgw-wenkai-screen-webfont/lxgwwenkaiscreen.css'
 // 卡片图片生成器专用字体（按字体展示方案引入）
 import '@fontsource/jetbrains-mono/500.css'
 import '@fontsource/jetbrains-mono/700.css'
