@@ -61,18 +61,21 @@ async function apiRequest<T>(
     headers.Authorization = `Bearer ${await getAccessToken(false)}`;
   }
 
+  // 设置超时时间 60 秒
+  const defaultTimeout = 60000;
+
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       method: options.method || "GET",
       headers,
       body: options.body ? JSON.stringify(options.body) : undefined,
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(defaultTimeout),
     });
   } catch (error) {
     const message =
       error instanceof Error && error.name === "TimeoutError"
-        ? "请求超过 20 秒，请稍后重试"
+        ? "请求超过 60 秒，请稍后重试"
         : "网络连接失败，请检查网络后重试";
     throw new ApiError(0, {
       code: "NETWORK_ERROR",
