@@ -1,4 +1,4 @@
-import { getAccessToken } from "./cloudbase";
+import { clearStoredAuth, getAccessToken } from "./auth";
 import { getClientId } from "./client-id";
 import type {
   ApiErrorBody,
@@ -10,17 +10,7 @@ import type {
   MyCheckin,
 } from "../types";
 
-const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL.replace(
-  /\/$/u,
-  "",
-);
-const useVercelProxy =
-  import.meta.env.PROD &&
-  (window.location.hostname === "cheer.kplwuyan.site" ||
-    window.location.hostname.endsWith(".vercel.app"));
-const API_BASE_URL = useVercelProxy
-  ? window.location.origin
-  : configuredApiBaseUrl;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.replace(/\/$/u, "");
 
 export class ApiError extends Error {
   readonly status: number;
@@ -42,7 +32,6 @@ interface RequestOptions {
   method?: "GET" | "POST";
   body?: Record<string, unknown>;
   auth?: boolean;
-  authRetry?: boolean;
   requestId?: string;
 }
 
@@ -50,7 +39,6 @@ async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const shouldRetryAuth = options.authRetry !== false;
   const requestId = options.requestId || crypto.randomUUID();
   const headers: Record<string, string> = {
     Accept: "application/json",
@@ -84,9 +72,9 @@ async function apiRequest<T>(
     });
   }
 
-  if (response.status === 401 && options.auth !== false && shouldRetryAuth) {
-    await getAccessToken(true);
-    return apiRequest<T>(path, { ...options, authRetry: false });
+  if (response.status === 401) {
+    // JWT 过期或无效 — 清除本地 token，下次请求将触发登录
+    clearStoredAuth();
   }
 
   let payload: unknown;

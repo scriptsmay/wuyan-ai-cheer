@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { LogIn, LogOut, ShieldCheck, X } from "lucide-vue-next";
-import { clearSession, signInWithPassword, signOut } from "../lib/cloudbase";
+import { clearSession, signInWithPassword, signOut } from "../lib/auth";
 
 const props = defineProps<{
   open: boolean;

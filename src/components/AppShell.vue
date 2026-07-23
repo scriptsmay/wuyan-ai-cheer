@@ -1,19 +1,18 @@
 <script setup lang="ts">
 import { LogIn, Radio, ShieldCheck, UserRound } from "lucide-vue-next";
 import { RouterLink, useRoute } from "vue-router";
-import { onMounted, onUnmounted, ref } from "vue";
+import { onMounted, ref } from "vue";
 import AuthDialog from "./AuthDialog.vue";
 import {
-  cloudbaseAuth,
   getAuthSnapshot,
+  onAuthChange,
   type AuthMode,
-} from "../lib/cloudbase";
+} from "../lib/auth";
 
 const route = useRoute();
 const authOpen = ref(false);
 const authMode = ref<AuthMode>("signed-out");
 const authUsername = ref("");
-let subscription: { unsubscribe: () => void } | undefined;
 
 async function refreshAuth() {
   try {
@@ -36,10 +35,8 @@ function handleAuthChanged() {
 
 onMounted(() => {
   void refreshAuth();
-  subscription =
-    cloudbaseAuth.onAuthStateChange(handleAuthChange).data.subscription;
+  onAuthChange(handleAuthChange);
 });
-onUnmounted(() => subscription?.unsubscribe());
 </script>
 
 <template>
