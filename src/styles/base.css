@@ -968,6 +968,13 @@ button:disabled {
   text-align: center;
 }
 
+.card-toggles {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
 .qr-toggle {
   display: flex;
   align-items: center;
@@ -976,6 +983,10 @@ button:disabled {
   margin: 18px 0 14px;
   cursor: pointer;
   user-select: none;
+}
+
+.card-toggles .qr-toggle {
+  margin: 10px 0;
 }
 
 .qr-toggle.disabled {

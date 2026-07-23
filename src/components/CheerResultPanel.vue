@@ -170,14 +170,14 @@ function handleDownload() {
             <input v-model="showQr" type="checkbox" :disabled="cardLoading" class="toggle-input" @change="handleRender" />
             <span class="toggle-thumb" />
           </span>
-          <span class="toggle-label">显示二维码</span>
+          <span class="toggle-label">二维码</span>
         </label>
         <label v-if="result.refs.length" class="qr-toggle" :class="{ disabled: cardLoading }">
           <span class="toggle-track" role="switch" :aria-checked="showRefs" tabindex="0" @click="cardLoading || (showRefs = !showRefs) || handleRender()">
             <input v-model="showRefs" type="checkbox" :disabled="cardLoading" class="toggle-input" @change="handleRender" />
             <span class="toggle-thumb" />
           </span>
-          <span class="toggle-label">显示赛季数据</span>
+          <span class="toggle-label">赛季数据</span>
         </label>
       </div>
       <button v-else class="card-placeholder" type="button" :disabled="cardLoading" @click="handleRender">
