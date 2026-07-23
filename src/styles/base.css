@@ -791,6 +791,85 @@ button:disabled {
   font-size: 16px;
 }
 
+/* ---- inline editors (CheerResultPanel real-time editing) ---- */
+.edit-field-label {
+  display: block;
+  margin: 22px 0 8px;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.edit-field-label:first-of-type {
+  margin-top: 28px;
+}
+
+.edit-char-count {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-dim);
+  font-size: 11px;
+  text-align: right;
+}
+
+.line-editor {
+  width: 100%;
+  padding: 14px 16px;
+  font-family: var(--font-display);
+  font-size: clamp(22px, 3vw, 34px);
+  line-height: 1.4;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  resize: vertical;
+  transition: border-color 180ms ease;
+}
+
+.line-editor:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.18);
+}
+
+.line-editor::placeholder {
+  color: var(--text-dim);
+  opacity: 0.5;
+}
+
+.caption-editor {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--secondary);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  transition: border-color 180ms ease;
+}
+
+.caption-editor:focus {
+  outline: none;
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 2px rgba(255, 159, 77, 0.18);
+}
+
+.auto-refresh-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+  margin-top: 8px;
+  animation: auto-refresh-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes auto-refresh-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
 .source-list {
   display: flex;
   flex-wrap: wrap;
@@ -814,6 +893,7 @@ button:disabled {
 }
 
 .action-row {
+  margin-top: 28px;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;

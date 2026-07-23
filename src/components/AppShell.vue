@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { LogIn, Radio, ShieldCheck, UserRound } from "lucide-vue-next";
 import { RouterLink, useRoute } from "vue-router";
-import { onMounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import AuthDialog from "./AuthDialog.vue";
 import {
   getAuthSnapshot,
@@ -33,10 +33,13 @@ function handleAuthChanged() {
   window.location.reload();
 }
 
+let unsubAuth: (() => void) | undefined;
+
 onMounted(() => {
   void refreshAuth();
-  onAuthChange(handleAuthChange);
+  unsubAuth = onAuthChange(handleAuthChange);
 });
+onUnmounted(() => unsubAuth?.());
 </script>
 
 <template>

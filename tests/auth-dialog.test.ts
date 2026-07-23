@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { flushPromises, mount } from "@vue/test-utils";
 import AuthDialog from "../src/components/AuthDialog.vue";
-import type { AuthMode } from "../src/lib/cloudbase";
+import type { AuthMode } from "../src/lib/auth";
 
 const { signOutMock, clearSessionMock, signInWithPasswordMock } = vi.hoisted(
   () => ({
@@ -13,7 +13,7 @@ const { signOutMock, clearSessionMock, signInWithPasswordMock } = vi.hoisted(
   }),
 );
 
-vi.mock("../src/lib/cloudbase", () => ({
+vi.mock("../src/lib/auth", () => ({
   signInWithPassword: signInWithPasswordMock,
   signOut: signOutMock,
   clearSession: clearSessionMock,

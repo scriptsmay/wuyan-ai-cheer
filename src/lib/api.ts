@@ -1,4 +1,4 @@
-import { clearStoredAuth, getAccessToken } from "./auth";
+import { clearStoredAuth, emitAuthChange, getAccessToken } from "./auth";
 import { getClientId } from "./client-id";
 import type {
   ApiErrorBody,
@@ -11,6 +11,7 @@ import type {
 } from "../types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.replace(/\/$/u, "");
+const AUTH_TOKEN = import.meta.env.VITE_AUTH_TOKEN || "";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -46,7 +47,17 @@ async function apiRequest<T>(
     "X-Request-Id": requestId,
   };
   if (options.auth !== false) {
-    headers.Authorization = `Bearer ${await getAccessToken(false)}`;
+    const token = await getAccessToken(false);
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  // 匿名访问时使用 query token 回落鉴权
+  let url = `${API_BASE_URL}${path}`;
+  if (options.auth !== false && !headers.Authorization && AUTH_TOKEN) {
+    const sep = path.includes("?") ? "&" : "?";
+    url += `${sep}token=${AUTH_TOKEN}`;
   }
 
   // 设置超时时间 60 秒
@@ -54,7 +65,7 @@ async function apiRequest<T>(
 
   let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
+    response = await fetch(url, {
       method: options.method || "GET",
       headers,
       body: options.body ? JSON.stringify(options.body) : undefined,
@@ -73,8 +84,9 @@ async function apiRequest<T>(
   }
 
   if (response.status === 401) {
-    // JWT 过期或无效 — 清除本地 token，下次请求将触发登录
+    // JWT 过期或无效 — 清除本地 token 并通知 UI 变为匿名状态
     clearStoredAuth();
+    emitAuthChange();
   }
 
   let payload: unknown;

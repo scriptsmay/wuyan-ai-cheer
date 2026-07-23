@@ -63,12 +63,11 @@ export function clearStoredAuth(): void {
 
 /**
  * 获取当前 access token。
+ * 匿名状态下返回空字符串，由调用方使用 query token 回落鉴权。
  * JWT 模式下没有 refresh 机制，forceRefresh 参数仅为接口兼容保留。
  */
 export async function getAccessToken(_forceRefresh = false): Promise<string> {
-  const token = getStoredToken();
-  if (!token) throw new Error("未登录，请先登录账号");
-  return token;
+  return getStoredToken();
 }
 
 /**
@@ -78,7 +77,7 @@ export async function getAuthSnapshot(): Promise<AuthSnapshot> {
   const token = getStoredToken();
   const username = getStoredUsername();
   if (!token) {
-    return { mode: "signed-out", accessToken: "", uid: "", username: "" };
+    return { mode: "anonymous", accessToken: "", uid: "", username: "" };
   }
   return {
     mode: "authenticated",

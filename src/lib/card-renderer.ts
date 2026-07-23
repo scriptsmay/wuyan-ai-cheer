@@ -101,6 +101,7 @@ interface CardInput {
   sourceSnapshotAt: string;
   checkin?: Checkin;
   showQr?: boolean;
+  showRefs?: boolean;
   // P8：心情，用于选取主题色；缺省按 daily
   mood?: Mood;
 }
@@ -124,7 +125,9 @@ export async function renderCheerCard(input: CardInput): Promise<RenderedCard> {
   drawBackground(context, theme);
   await drawSignalHeader(context, theme, input.checkin);
   await drawMainCopy(context, theme, input.line, input.emojiCaption);
-  await drawRefs(context, theme, input.refs);
+  if (input.showRefs !== false) {
+    await drawRefs(context, theme, input.refs);
+  }
   await drawFooter(context, theme, input);
 
   const blob = await new Promise<Blob>((resolve, reject) => {
@@ -305,7 +308,7 @@ async function drawSignalHeader(
   // 英文装饰
   await drawText(
     context,
-    'WUYAN / FAN SIGNAL STATION',
+    'KPL WUYAN / FAN SIGNAL STATION',
     146,
     244,
     FONT_ENGLISH_HEADER,
@@ -360,7 +363,8 @@ async function drawStreakBadge(
     return;
   }
 
-  const streak = checkin.streak;
+  // 使用总计天数 total_days
+  const streak = checkin.total_days;
   let numSize = 140;
   let numColor = theme.primary;
 
@@ -640,7 +644,7 @@ async function drawFooter(
       { text: '生成日期 ： ', font: FONT_BODY_LABEL, color: darkColor },
       { text: today, font: FONT_MONO_META, color: darkColor },
       { text: ' · ', font: FONT_MONO_META, color: darkColor },
-      { text: '无言应援信号站', font: FONT_MONO_META, color: darkColor },
+      { text: 'KPL无言应援信号站', font: FONT_MONO_META, color: darkColor },
     ],
     92,
     1360,
