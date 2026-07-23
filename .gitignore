@@ -3,7 +3,6 @@ dist/
 coverage/
 .env
 .env.local
-.env.production
 *.log
 .DS_Store
 .workbuddy/
