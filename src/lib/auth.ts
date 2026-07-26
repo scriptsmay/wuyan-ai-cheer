@@ -8,12 +8,12 @@
  * 兼容旧 cloudbase.ts 的导出接口，最小化组件改动。
  */
 
-const STORAGE_KEY_TOKEN = "auth_token";
-const STORAGE_KEY_USERNAME = "auth_username";
+const STORAGE_KEY_TOKEN = 'auth_token';
+const STORAGE_KEY_USERNAME = 'auth_username';
 
 // ---- 类型（与旧 cloudbase.ts 兼容） ----
 
-export type AuthMode = "anonymous" | "authenticated" | "signed-out";
+export type AuthMode = 'anonymous' | 'authenticated' | 'signed-out';
 
 export interface AuthSnapshot {
   mode: AuthMode;
@@ -26,37 +26,43 @@ export interface AuthSnapshot {
 
 function getStoredToken(): string {
   try {
-    return localStorage.getItem(STORAGE_KEY_TOKEN) || "";
+    return localStorage.getItem(STORAGE_KEY_TOKEN) || '';
   } catch {
-    return "";
+    return '';
   }
 }
 
 function setStoredToken(token: string): void {
   try {
     localStorage.setItem(STORAGE_KEY_TOKEN, token);
-  } catch { /* quota exceeded — silently fail */ }
+  } catch {
+    /* quota exceeded — silently fail */
+  }
 }
 
 function getStoredUsername(): string {
   try {
-    return localStorage.getItem(STORAGE_KEY_USERNAME) || "";
+    return localStorage.getItem(STORAGE_KEY_USERNAME) || '';
   } catch {
-    return "";
+    return '';
   }
 }
 
 function setStoredUsername(name: string): void {
   try {
     localStorage.setItem(STORAGE_KEY_USERNAME, name);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 export function clearStoredAuth(): void {
   try {
     localStorage.removeItem(STORAGE_KEY_TOKEN);
     localStorage.removeItem(STORAGE_KEY_USERNAME);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 // ---- 公开 API ----
@@ -77,10 +83,10 @@ export async function getAuthSnapshot(): Promise<AuthSnapshot> {
   const token = getStoredToken();
   const username = getStoredUsername();
   if (!token) {
-    return { mode: "anonymous", accessToken: "", uid: "", username: "" };
+    return { mode: 'anonymous', accessToken: '', uid: '', username: '' };
   }
   return {
-    mode: "authenticated",
+    mode: 'authenticated',
     accessToken: token,
     uid: username, // JWT 模式下 uid 就是用户名
     username,
@@ -90,30 +96,28 @@ export async function getAuthSnapshot(): Promise<AuthSnapshot> {
 /**
  * 用户名密码登录 → POST /api/auth/login → 存储 JWT。
  */
-export async function signInWithPassword(
-  username: string,
-  password: string,
-): Promise<void> {
-  const apiBase = import.meta.env.VITE_API_BASE_URL.replace(/\/$/u, "");
+export async function signInWithPassword(username: string, password: string): Promise<void> {
+  const apiBase = import.meta.env.VITE_API_BASE_URL.replace(/\/$/u, '');
   const resp = await fetch(`${apiBase}/api/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
   });
 
   if (!resp.ok) {
-    let msg = "用户名或密码错误";
+    let msg = '用户名或密码错误';
     try {
       const body = await resp.json();
       if (body?.message) msg = body.message;
-    } catch { /* use default */ }
+    } catch {
+      /* use default */
+    }
     throw new Error(msg);
   }
 
   const body = await resp.json();
-  const token =
-    body?.access_token || body?.data?.access_token || body?.token || "";
-  if (!token) throw new Error("服务未返回有效的 access token");
+  const token = body?.access_token || body?.data?.access_token || body?.token || '';
+  if (!token) throw new Error('服务未返回有效的 access token');
 
   setStoredToken(token);
   setStoredUsername(username);
@@ -148,6 +152,10 @@ export function onAuthChange(fn: AuthListener): () => void {
 
 export function emitAuthChange(): void {
   for (const fn of listeners) {
-    try { fn(); } catch { /* ignore */ }
+    try {
+      fn();
+    } catch {
+      /* ignore */
+    }
   }
 }

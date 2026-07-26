@@ -1,5 +1,5 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from './views/HomeView.vue'
+import { createRouter, createWebHistory } from 'vue-router';
+import HomeView from './views/HomeView.vue';
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -9,6 +9,6 @@ export const router = createRouter({
     { path: '/cheer', name: 'cheer', component: () => import('./views/CheerView.vue') },
     { path: '/secretary', name: 'secretary', component: () => import('./views/SecretaryView.vue') },
     { path: '/checkin', name: 'checkin', component: () => import('./views/CheckinView.vue') },
-    { path: '/:pathMatch(.*)*', redirect: '/' }
-  ]
-})
+    { path: '/:pathMatch(.*)*', redirect: '/' },
+  ],
+});

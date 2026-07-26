@@ -1,4 +1,4 @@
-export type Mood = "victory" | "low" | "daily" | "hope";
+export type Mood = 'victory' | 'low' | 'daily' | 'hope';
 
 export interface CheerRef {
   label: string;
@@ -51,18 +51,11 @@ export interface ApiErrorBody {
   retry_after?: number;
 }
 
-export type UiStatus =
-  | "idle"
-  | "loading"
-  | "success"
-  | "empty"
-  | "rate-limited"
-  | "network-error"
-  | "service-error";
+export type UiStatus = 'idle' | 'loading' | 'success' | 'empty' | 'rate-limited' | 'network-error' | 'service-error';
 
 export interface ChatMessage {
   id: string;
-  type: "user" | "ai";
+  type: 'user' | 'ai';
   content: string;
 }
 

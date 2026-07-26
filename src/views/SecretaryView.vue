@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { Bot, RadioTower, Send } from 'lucide-vue-next'
-import { computed, nextTick, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
-import { ApiError, askQuestion, getConfig } from '../lib/api'
-import { getDailyUsage, incrementDailyUsage, usageKey } from '../lib/usage-limit'
-import type { ChatMessage } from '../types'
+import { Bot, RadioTower, Send } from '@lucide/vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
+import { RouterLink } from 'vue-router';
+import { ApiError, askQuestion, getConfig } from '../lib/api';
+import { getDailyUsage, incrementDailyUsage, usageKey } from '../lib/usage-limit';
+import type { ChatMessage } from '../types';
 
-const messages = ref<ChatMessage[]>([])
-const inputValue = ref('')
-const loading = ref(false)
-const dailyLimit = ref(10)
-const usedCount = ref(0)
-const chatEl = ref<HTMLElement | null>(null)
+const messages = ref<ChatMessage[]>([]);
+const inputValue = ref('');
+const loading = ref(false);
+const dailyLimit = ref(10);
+const usedCount = ref(0);
+const chatEl = ref<HTMLElement | null>(null);
 
-const limitReached = computed(() => usedCount.value >= dailyLimit.value)
-const remaining = computed(() => dailyLimit.value - usedCount.value)
+const limitReached = computed(() => usedCount.value >= dailyLimit.value);
+const remaining = computed(() => dailyLimit.value - usedCount.value);
 
 const quickQuestions = [
   '他KDA多少',
@@ -22,25 +22,25 @@ const quickQuestions = [
   '最近状态怎么样',
   '常用英雄有哪些',
   '今天有比赛吗',
-  '直播时间是什么时候'
-]
+  '直播时间是什么时候',
+];
 
 onMounted(async () => {
-  addAiMessage('你好！我是无言小秘书，随时为你解答关于无言的赛事数据问题～')
-  loadLocalUsage()
-  await loadConfig()
-  await scrollToBottom()
-})
+  addAiMessage('你好！我是无言小秘书，随时为你解答关于无言的赛事数据问题～');
+  loadLocalUsage();
+  await loadConfig();
+  await scrollToBottom();
+});
 
 function loadLocalUsage() {
-  usedCount.value = getDailyUsage(usageKey('ask'))
+  usedCount.value = getDailyUsage(usageKey('ask'));
 }
 
 async function loadConfig() {
   try {
-    const config = await getConfig()
+    const config = await getConfig();
     if (config && config.ask_daily_limit) {
-      dailyLimit.value = config.ask_daily_limit
+      dailyLimit.value = config.ask_daily_limit;
     }
   } catch {
     // use default limit
@@ -48,62 +48,62 @@ async function loadConfig() {
 }
 
 async function sendMessage() {
-  if (!inputValue.value.trim() || loading.value) return
+  if (!inputValue.value.trim() || loading.value) return;
 
   if (limitReached.value) {
-    inputValue.value = ''
-    addAiMessage(`今日提问次数已达上限（${dailyLimit.value}次），请明日再来～`)
-    return
+    inputValue.value = '';
+    addAiMessage(`今日提问次数已达上限（${dailyLimit.value}次），请明日再来～`);
+    return;
   }
 
-  const q = inputValue.value.trim()
-  inputValue.value = ''
-  loading.value = true
+  const q = inputValue.value.trim();
+  inputValue.value = '';
+  loading.value = true;
 
-  addUserMessage(q)
+  addUserMessage(q);
 
   try {
-    const res = await askQuestion(q, crypto.randomUUID())
-    incrementDailyUsage(usageKey('ask'))
-    usedCount.value = getDailyUsage(usageKey('ask'))
-    addAiMessage(res.answer || '暂无回答')
+    const res = await askQuestion(q, crypto.randomUUID());
+    incrementDailyUsage(usageKey('ask'));
+    usedCount.value = getDailyUsage(usageKey('ask'));
+    addAiMessage(res.answer || '暂无回答');
   } catch (err) {
-    let errorMsg = '小秘书暂时开小差，稍后再试～'
+    let errorMsg = '小秘书暂时开小差，稍后再试～';
     if (err instanceof ApiError) {
       if (err.status === 429 || err.code === 'RATE_LIMITED') {
-        errorMsg = '今日 AI 调用已达上限，请明日再来'
-        usedCount.value = dailyLimit.value
+        errorMsg = '今日 AI 调用已达上限，请明日再来';
+        usedCount.value = dailyLimit.value;
       } else if (err.code === 'NETWORK_ERROR') {
-        errorMsg = '网络连接失败，请检查网络后重试'
+        errorMsg = '网络连接失败，请检查网络后重试';
       }
     } else if (err instanceof Error && err.message.includes('404')) {
-      errorMsg = '暂无相关数据'
+      errorMsg = '暂无相关数据';
     }
-    addAiMessage(errorMsg)
+    addAiMessage(errorMsg);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 function handleQuickQuestion(question: string) {
-  inputValue.value = question
-  sendMessage()
+  inputValue.value = question;
+  sendMessage();
 }
 
 function addUserMessage(content: string) {
-  messages.value.push({ id: Date.now().toString(), type: 'user', content })
-  scrollToBottom()
+  messages.value.push({ id: Date.now().toString(), type: 'user', content });
+  scrollToBottom();
 }
 
 function addAiMessage(content: string) {
-  messages.value.push({ id: Date.now().toString(), type: 'ai', content })
-  scrollToBottom()
+  messages.value.push({ id: Date.now().toString(), type: 'ai', content });
+  scrollToBottom();
 }
 
 async function scrollToBottom() {
-  await nextTick()
+  await nextTick();
   if (chatEl.value) {
-    chatEl.value.scrollTop = chatEl.value.scrollHeight
+    chatEl.value.scrollTop = chatEl.value.scrollHeight;
   }
 }
 </script>
@@ -123,11 +123,7 @@ async function scrollToBottom() {
 
       <div ref="chatEl" class="chat-messages">
         <div class="message-list">
-          <div
-            v-for="msg in messages"
-            :key="msg.id"
-            class="message-item"
-          >
+          <div v-for="msg in messages" :key="msg.id" class="message-item">
             <div v-if="msg.type === 'ai'" class="ai-content">
               <div class="ai-avatar">
                 <Bot :size="22" />
@@ -159,13 +155,7 @@ async function scrollToBottom() {
       </div>
 
       <div class="quick-chips">
-        <button
-          v-for="q in quickQuestions"
-          :key="q"
-          class="chip"
-          type="button"
-          @click="handleQuickQuestion(q)"
-        >
+        <button v-for="q in quickQuestions" :key="q" class="chip" type="button" @click="handleQuickQuestion(q)">
           {{ q }}
         </button>
       </div>
@@ -185,12 +175,7 @@ async function scrollToBottom() {
           placeholder="问问小秘书..."
           @keyup.enter="sendMessage"
         />
-        <button
-          class="send-btn"
-          type="button"
-          :disabled="!inputValue || loading"
-          @click="sendMessage"
-        >
+        <button class="send-btn" type="button" :disabled="!inputValue || loading" @click="sendMessage">
           <Send :size="18" />
         </button>
       </div>

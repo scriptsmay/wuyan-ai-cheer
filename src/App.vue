@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { RouterView } from 'vue-router'
-import AppShell from './components/AppShell.vue'
-import PrivacyNotice from './components/PrivacyNotice.vue'
+import { onMounted, ref } from 'vue';
+import { RouterView } from 'vue-router';
+import AppShell from './components/AppShell.vue';
+import PrivacyNotice from './components/PrivacyNotice.vue';
 
-const privacyOpen = ref(false)
+const privacyOpen = ref(false);
 
 onMounted(() => {
-  privacyOpen.value = localStorage.getItem('wuyan-privacy-accepted') !== '1'
-})
+  privacyOpen.value = localStorage.getItem('wuyan-privacy-accepted') !== '1';
+});
 
 function acceptPrivacy() {
-  localStorage.setItem('wuyan-privacy-accepted', '1')
-  privacyOpen.value = false
+  localStorage.setItem('wuyan-privacy-accepted', '1');
+  privacyOpen.value = false;
 }
 </script>
 

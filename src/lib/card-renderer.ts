@@ -131,10 +131,7 @@ export async function renderCheerCard(input: CardInput): Promise<RenderedCard> {
   await drawFooter(context, theme, input);
 
   const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (value) => (value ? resolve(value) : reject(new Error('图片编码失败'))),
-      'image/png',
-    );
+    canvas.toBlob((value) => (value ? resolve(value) : reject(new Error('图片编码失败'))), 'image/png');
   });
   const date = formatDate(new Date());
   return {
@@ -149,14 +146,7 @@ export async function renderCheerCard(input: CardInput): Promise<RenderedCard> {
 /* ------------------------------------------------------------------ */
 
 /** 圆角矩形路径（arcTo 实现，兼容无 ctx.roundRect 的环境） */
-function roundRectPath(
-  context: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number,
-): void {
+function roundRectPath(context: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
   const rr = Math.min(r, w / 2, h / 2);
   context.beginPath();
   context.moveTo(x + rr, y);
@@ -176,7 +166,7 @@ function buildSignalWavePath(
   amplitude: number,
   frequency: number,
   phase: number,
-  samples = 240,
+  samples = 240
 ): Path2D {
   const path = new Path2D();
   for (let i = 0; i <= samples; i++) {
@@ -195,7 +185,7 @@ function drawRays(
   cy: number,
   radius: number,
   count: number,
-  color: string,
+  color: string
 ): void {
   context.save();
   context.strokeStyle = color;
@@ -291,29 +281,11 @@ function drawBackground(context: CanvasRenderingContext2D, theme: CardTheme) {
 /* Header（主标题 + 状态行 + P6 streak 徽章）                              */
 /* ------------------------------------------------------------------ */
 
-async function drawSignalHeader(
-  context: CanvasRenderingContext2D,
-  theme: CardTheme,
-  checkin?: Checkin,
-) {
+async function drawSignalHeader(context: CanvasRenderingContext2D, theme: CardTheme, checkin?: Checkin) {
   // 主标题：黄油体
-  await drawText(
-    context,
-    checkin ? '每日加油信号' : '无言应援信号',
-    144,
-    190,
-    FONT_TITLE_HEADER,
-    '#DFFBFF',
-  );
+  await drawText(context, checkin ? '每日加油信号' : '无言应援信号', 144, 190, FONT_TITLE_HEADER, '#DFFBFF');
   // 英文装饰
-  await drawText(
-    context,
-    'KPL WUYAN / FAN SIGNAL STATION',
-    146,
-    244,
-    FONT_ENGLISH_HEADER,
-    '#7AA8B8',
-  );
+  await drawText(context, 'KPL WUYAN / FAN SIGNAL STATION', 146, 244, FONT_ENGLISH_HEADER, '#7AA8B8');
 
   if (checkin) {
     // 状态行：中文（副标题 HarmonyOS Sans Medium）+ 数字（JetBrains Mono）混合排版
@@ -333,11 +305,7 @@ async function drawSignalHeader(
  * - 场景差异：streak=1 绿点 NEW；>=7 橙色胶囊；>=100 金色环+光芒+金数字
  * - 无 checkin 时显示 NEW / 新信号 占位
  */
-async function drawStreakBadge(
-  context: CanvasRenderingContext2D,
-  theme: CardTheme,
-  checkin?: Checkin,
-): Promise<void> {
+async function drawStreakBadge(context: CanvasRenderingContext2D, theme: CardTheme, checkin?: Checkin): Promise<void> {
   const cx = 885;
   const cy = 230;
   const R = 110;
@@ -391,36 +359,16 @@ async function drawStreakBadge(
   context.restore();
 
   // 单位
-  await drawText(
-    context,
-    'DAY',
-    cx,
-    cy + 102,
-    FONT_BADGE_UNIT,
-    '#86A8B8',
-    'center',
-  );
+  await drawText(context, 'DAY', cx, cy + 102, FONT_BADGE_UNIT, '#86A8B8', 'center');
 }
 
 /* ------------------------------------------------------------------ */
 /* 主文案                                                                */
 /* ------------------------------------------------------------------ */
 
-async function drawMainCopy(
-  context: CanvasRenderingContext2D,
-  theme: CardTheme,
-  line: string,
-  emojiCaption: string,
-) {
+async function drawMainCopy(context: CanvasRenderingContext2D, theme: CardTheme, line: string, emojiCaption: string) {
   // 英文装饰（跟随心情主色）
-  await drawText(
-    context,
-    'SIGNAL / 01',
-    92,
-    415,
-    FONT_ENGLISH_EYEBROW,
-    theme.primary,
-  );
+  await drawText(context, 'SIGNAL / 01', 92, 415, FONT_ENGLISH_EYEBROW, theme.primary);
   // 主文案：黄油体（大标题）
   context.font = FONT_TITLE_MAIN;
   await document.fonts.load(FONT_TITLE_MAIN, line);
@@ -428,9 +376,7 @@ async function drawMainCopy(
   // P1：wrapText maxWidth 由 840 提到 896（黄油体更宽，避免换行点漂移）
   const wrapped = wrapText(context, line, 896);
   const rendered = wrapped.slice(0, 4);
-  rendered.forEach((row, index) =>
-    context.fillText(row, 92, 520 + index * 106),
-  );
+  rendered.forEach((row, index) => context.fillText(row, 92, 520 + index * 106));
 
   // P4：emojiCaption 做成情绪 pill（辅色实底 + onAccent 文字），动态 y
   const captionBaseline = 620 + (rendered.length - 1) * 106 + 96;
@@ -443,7 +389,7 @@ async function drawCaptionPill(
   theme: CardTheme,
   text: string,
   x: number,
-  baselineY: number,
+  baselineY: number
 ): Promise<void> {
   if (!text) return;
   context.font = FONT_SUBTITLE_CAPTION;
@@ -468,11 +414,7 @@ async function drawCaptionPill(
 /* refs（数据引用）                                                      */
 /* ------------------------------------------------------------------ */
 
-async function drawRefs(
-  context: CanvasRenderingContext2D,
-  theme: CardTheme,
-  refs: CheerRef[],
-): Promise<void> {
+async function drawRefs(context: CanvasRenderingContext2D, theme: CardTheme, refs: CheerRef[]): Promise<void> {
   const visible = refs.slice(0, 2);
 
   // P3：refs 为空时画占位卡（频段刻度），不再直接 return
@@ -513,10 +455,7 @@ async function drawRefs(
 }
 
 /** P3 — refs 空状态占位卡 */
-function drawRefsPlaceholder(
-  context: CanvasRenderingContext2D,
-  theme: CardTheme,
-): void {
+function drawRefsPlaceholder(context: CanvasRenderingContext2D, theme: CardTheme): void {
   const x = 92;
   const y = 1094;
   const w = 896;
@@ -553,11 +492,7 @@ function drawRefsPlaceholder(
   context.textAlign = 'center';
   context.font = FONT_ENGLISH_META;
   context.fillStyle = '#577485';
-  context.fillText(
-    '信号频段采集中 · SIGNAL SPECTRUM STANDBY',
-    x + w / 2,
-    y + h / 2 + 7,
-  );
+  context.fillText('信号频段采集中 · SIGNAL SPECTRUM STANDBY', x + w / 2, y + h / 2 + 7);
   context.restore();
 }
 
@@ -565,17 +500,10 @@ function drawRefsPlaceholder(
 /* Footer（QR + 数据读出）                                               */
 /* ------------------------------------------------------------------ */
 
-async function drawFooter(
-  context: CanvasRenderingContext2D,
-  theme: CardTheme,
-  input: CardInput,
-) {
+async function drawFooter(context: CanvasRenderingContext2D, theme: CardTheme, input: CardInput) {
   // 圆角 QR 卡（替换原先的白块 fillRect）
   if (input.showQr !== false) {
-    const siteUrl = new URL(
-      '/cheer',
-      import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin,
-    ).toString();
+    const siteUrl = new URL('/cheer', import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin).toString();
     const qrDataUrl = await QRCode.toDataURL(siteUrl, {
       width: 176,
       margin: 1,
@@ -612,15 +540,7 @@ async function drawFooter(
     context.stroke();
 
     // 顶部标签（对比度提升）
-    await drawText(
-      context,
-      '扫码接收今日信号',
-      910,
-      1160,
-      FONT_QR_LABEL,
-      '#9FB4C0',
-      'center',
-    );
+    await drawText(context, '扫码接收今日信号', 910, 1160, FONT_QR_LABEL, '#9FB4C0', 'center');
   }
 
   // [deleted] P5：数据读出 —— 快照时间（sourceSnapshotAt）；P7 对比度提升
@@ -647,7 +567,7 @@ async function drawFooter(
       { text: 'KPL无言应援信号站', font: FONT_MONO_META, color: darkColor },
     ],
     92,
-    1360,
+    1360
   );
   // // 时间戳：数字（JetBrains Mono）
   // await drawText(
@@ -674,12 +594,7 @@ interface GlyphRun {
   color: string;
 }
 
-async function drawRuns(
-  context: CanvasRenderingContext2D,
-  runs: GlyphRun[],
-  x: number,
-  y: number,
-): Promise<number> {
+async function drawRuns(context: CanvasRenderingContext2D, runs: GlyphRun[], x: number, y: number): Promise<number> {
   await Promise.all(runs.map((run) => document.fonts.load(run.font, run.text)));
   let cursor = x;
   for (const run of runs) {
@@ -698,7 +613,7 @@ async function drawText(
   y: number,
   font: string,
   color: string,
-  align?: CanvasTextAlign,
+  align?: CanvasTextAlign
 ): Promise<void> {
   context.save();
   context.font = font;
@@ -722,11 +637,7 @@ function buildCheckinRuns(checkin: Checkin): GlyphRun[] {
   ];
 }
 
-function wrapText(
-  context: CanvasRenderingContext2D,
-  text: string,
-  maxWidth: number,
-): string[] {
+function wrapText(context: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
   const lines: string[] = [];
   let current = '';
   for (const character of Array.from(text)) {

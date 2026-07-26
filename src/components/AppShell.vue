@@ -1,18 +1,14 @@
 <script setup lang="ts">
-import { LogIn, Radio, ShieldCheck, UserRound } from "lucide-vue-next";
-import { RouterLink, useRoute } from "vue-router";
-import { onMounted, onUnmounted, ref } from "vue";
-import AuthDialog from "./AuthDialog.vue";
-import {
-  getAuthSnapshot,
-  onAuthChange,
-  type AuthMode,
-} from "../lib/auth";
+import { LogIn, Radio, ShieldCheck, UserRound } from '@lucide/vue';
+import { RouterLink, useRoute } from 'vue-router';
+import { onMounted, onUnmounted, ref } from 'vue';
+import AuthDialog from './AuthDialog.vue';
+import { getAuthSnapshot, onAuthChange, type AuthMode } from '../lib/auth';
 
 const route = useRoute();
 const authOpen = ref(false);
-const authMode = ref<AuthMode>("signed-out");
-const authUsername = ref("");
+const authMode = ref<AuthMode>('signed-out');
+const authUsername = ref('');
 
 async function refreshAuth() {
   try {
@@ -20,8 +16,8 @@ async function refreshAuth() {
     authMode.value = snapshot.mode;
     authUsername.value = snapshot.username;
   } catch {
-    authMode.value = "signed-out";
-    authUsername.value = "";
+    authMode.value = 'signed-out';
+    authUsername.value = '';
   }
 }
 
@@ -54,29 +50,14 @@ onUnmounted(() => unsubAuth?.());
         </span>
       </RouterLink>
       <nav aria-label="主导航">
-        <RouterLink :class="{ active: route.name === 'cheer' }" to="/cheer">
-          生成应援
-        </RouterLink>
-        <RouterLink
-          :class="{ active: route.name === 'secretary' }"
-          to="/secretary"
-        >
-          智能问答
-        </RouterLink>
-        <RouterLink :class="{ active: route.name === 'checkin' }" to="/checkin">
-          每日打卡
-        </RouterLink>
+        <RouterLink :class="{ active: route.name === 'cheer' }" to="/cheer"> 生成应援 </RouterLink>
+        <RouterLink :class="{ active: route.name === 'secretary' }" to="/secretary"> 智能问答 </RouterLink>
+        <RouterLink :class="{ active: route.name === 'checkin' }" to="/checkin"> 每日打卡 </RouterLink>
       </nav>
-      <button
-        class="security-chip auth-trigger"
-        type="button"
-        @click="authOpen = true"
-      >
+      <button class="security-chip auth-trigger" type="button" @click="authOpen = true">
         <UserRound v-if="authMode === 'authenticated'" :size="15" />
         <ShieldCheck v-else :size="15" />
-        {{
-          authMode === "authenticated" ? authUsername || "已登录" : "登录账号"
-        }}
+        {{ authMode === 'authenticated' ? authUsername || '已登录' : '登录账号' }}
         <LogIn v-if="authMode !== 'authenticated'" :size="14" />
       </button>
     </header>
