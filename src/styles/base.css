@@ -244,6 +244,20 @@ textarea:focus-visible {
 .auth-error { color: var(--secondary); }
 .auth-note { color: var(--text-dim); line-height: 1.6; }
 
+.auth-expired-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--secondary) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--secondary) 40%, transparent);
+  color: var(--secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 main {
   min-height: calc(100vh - 150px);
 }

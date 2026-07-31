@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { LogIn, LogOut, ShieldCheck, X } from "lucide-vue-next";
+import { LogIn, LogOut, ShieldCheck, X, AlertCircle } from "lucide-vue-next";
 import { clearSession, signInWithPassword, signOut } from "../lib/auth";
 
 const props = defineProps<{
   open: boolean;
   mode: "anonymous" | "authenticated" | "signed-out";
   username: string;
+  expired?: boolean;
 }>();
 const emit = defineEmits<{ close: []; changed: [] }>();
 const loginUsername = ref("");
@@ -77,6 +78,9 @@ async function logout() {
         <X :size="20" />
       </button>
       <span class="eyebrow"><ShieldCheck :size="18" /> 账号登录</span>
+      <div v-if="expired" class="auth-expired-notice" role="alert">
+        <AlertCircle :size="16" /> 登录已过期，请重新登录
+      </div>
       <h2 id="auth-title">
         {{ isAuthenticated ? "已登录账号" : "登录账号" }}
       </h2>

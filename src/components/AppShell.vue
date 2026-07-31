@@ -3,16 +3,19 @@ import { LogIn, Radio, ShieldCheck, UserRound } from "lucide-vue-next";
 import { RouterLink, useRoute } from "vue-router";
 import { onMounted, onUnmounted, ref } from "vue";
 import AuthDialog from "./AuthDialog.vue";
+import { verifySession } from "../lib/api";
 import {
   getAuthSnapshot,
   onAuthChange,
   type AuthMode,
+  type AuthChangeReason,
 } from "../lib/auth";
 
 const route = useRoute();
 const authOpen = ref(false);
 const authMode = ref<AuthMode>("signed-out");
 const authUsername = ref("");
+const sessionExpired = ref(false);
 
 async function refreshAuth() {
   try {
@@ -25,8 +28,35 @@ async function refreshAuth() {
   }
 }
 
-function handleAuthChange() {
+/**
+ * 初始化时主动向服务端验证 token 是否有效。
+ * - 401: apiRequest 内部已调用 clearStoredAuth + emitAuthChange('expired')，
+ *        事件监听器会自动刷新 UI 并弹出登录框，这里无需额外处理。
+ * - 网络错误: 保持缓存的登录态，不因网络波动强制登出。
+ * - 成功: 用服务端返回的用户名刷新本地缓存（防止 localStorage 过期数据）。
+ */
+async function initAuth() {
+  await refreshAuth();
+  if (authMode.value !== "authenticated") return;
+  try {
+    const result = await verifySession();
+    if (result.username) authUsername.value = result.username;
+  } catch {
+    // 401 已由 apiRequest 处理；其他错误静默忽略，保持缓存状态
+  }
+}
+
+function handleAuthChange(reason?: AuthChangeReason) {
   void refreshAuth();
+  if (reason === "expired") {
+    sessionExpired.value = true;
+    authOpen.value = true;
+  }
+}
+
+function handleAuthClose() {
+  authOpen.value = false;
+  sessionExpired.value = false;
 }
 
 function handleAuthChanged() {
@@ -36,7 +66,7 @@ function handleAuthChanged() {
 let unsubAuth: (() => void) | undefined;
 
 onMounted(() => {
-  void refreshAuth();
+  void initAuth();
   unsubAuth = onAuthChange(handleAuthChange);
 });
 onUnmounted(() => unsubAuth?.());
@@ -94,7 +124,8 @@ onUnmounted(() => unsubAuth?.());
     :open="authOpen"
     :mode="authMode"
     :username="authUsername"
-    @close="authOpen = false"
+    :expired="sessionExpired"
+    @close="handleAuthClose"
     @changed="handleAuthChanged"
   />
 </template>

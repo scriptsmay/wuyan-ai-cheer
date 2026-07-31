@@ -137,8 +137,13 @@ export async function clearSession(): Promise<void> {
 /**
  * 简易事件发射器，替代 CloudBase SDK 的 onAuthStateChange。
  * 仅用于 AppShell 组件内监听登录/登出变化。
+ *
+ * reason 参数让 UI 能区分"主动登出"和"session 过期"：
+ * - undefined: 主动登出/登录等正常状态变更
+ * - 'expired': 服务端返回 401，JWT 过期或无效
  */
-type AuthListener = () => void;
+export type AuthChangeReason = "expired" | undefined;
+type AuthListener = (reason?: AuthChangeReason) => void;
 const listeners = new Set<AuthListener>();
 
 export function onAuthChange(fn: AuthListener): () => void {
@@ -146,8 +151,8 @@ export function onAuthChange(fn: AuthListener): () => void {
   return () => listeners.delete(fn);
 }
 
-export function emitAuthChange(): void {
+export function emitAuthChange(reason?: AuthChangeReason): void {
   for (const fn of listeners) {
-    try { fn(); } catch { /* ignore */ }
+    try { fn(reason); } catch { /* ignore */ }
   }
 }

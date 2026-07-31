@@ -84,9 +84,9 @@ async function apiRequest<T>(
   }
 
   if (response.status === 401) {
-    // JWT 过期或无效 — 清除本地 token 并通知 UI 变为匿名状态
+    // JWT 过期或无效 — 清除本地 token 并通知 UI 提示重新登录
     clearStoredAuth();
-    emitAuthChange();
+    emitAuthChange("expired");
   }
 
   let payload: unknown;
@@ -184,4 +184,11 @@ export function askQuestion(
 
 export function getConfig(): Promise<AppConfig> {
   return apiRequest<AppConfig>("/api/config", { auth: false });
+}
+
+export function verifySession(): Promise<{
+  username: string;
+  subject_id: string;
+}> {
+  return apiRequest<{ username: string; subject_id: string }>("/api/auth/me");
 }
