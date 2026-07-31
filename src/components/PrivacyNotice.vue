@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ShieldCheck, X } from 'lucide-vue-next'
+import { ShieldCheck, X } from '@lucide/vue';
 
-defineProps<{ open: boolean }>()
-defineEmits<{ accept: [] }>()
+defineProps<{ open: boolean }>();
+defineEmits<{ accept: [] }>();
 </script>
 
 <template>

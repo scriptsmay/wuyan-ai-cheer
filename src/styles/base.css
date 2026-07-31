@@ -16,8 +16,7 @@ body {
   color: var(--text);
   background:
     radial-gradient(circle at 78% 18%, rgba(0, 212, 255, 0.08), transparent 28rem),
-    radial-gradient(circle at 8% 62%, rgba(255, 159, 77, 0.07), transparent 25rem),
-    var(--bg);
+    radial-gradient(circle at 8% 62%, rgba(255, 159, 77, 0.07), transparent 25rem), var(--bg);
 }
 
 button,
@@ -240,9 +239,16 @@ textarea:focus-visible {
   margin-top: 16px;
 }
 
-.auth-status { color: var(--success); }
-.auth-error { color: var(--secondary); }
-.auth-note { color: var(--text-dim); line-height: 1.6; }
+.auth-status {
+  color: var(--success);
+}
+.auth-error {
+  color: var(--secondary);
+}
+.auth-note {
+  color: var(--text-dim);
+  line-height: 1.6;
+}
 
 .auth-expired-notice {
   display: flex;
@@ -309,7 +315,7 @@ main {
   width: 12px;
   height: 82%;
   background: linear-gradient(var(--secondary) 0 31%, transparent 31% 38%, var(--primary) 38% 100%);
-  content: "";
+  content: '';
 }
 
 .hero-copy h1,
@@ -377,7 +383,9 @@ main {
   background: rgba(18, 29, 48, 0.94);
   box-shadow: var(--shadow-signal);
   clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px));
-  transition: transform 200ms ease, border-color 200ms ease;
+  transition:
+    transform 200ms ease,
+    border-color 200ms ease;
 }
 
 .route-card:hover {
@@ -490,7 +498,7 @@ main {
   left: 23px;
   width: 1px;
   background: var(--line);
-  content: "";
+  content: '';
 }
 
 .step-rail li b {
@@ -605,12 +613,26 @@ main {
   color: rgba(7, 16, 22, 0.7);
 }
 
-.mood-victory.selected { background: var(--victory); }
-.mood-low.selected { color: #fff; background: var(--low); }
-.mood-low.selected small { color: rgba(255, 255, 255, 0.72); }
-.mood-daily.selected { background: var(--daily); }
-.mood-hope.selected { color: #fff; background: var(--hope); }
-.mood-hope.selected small { color: rgba(255, 255, 255, 0.74); }
+.mood-victory.selected {
+  background: var(--victory);
+}
+.mood-low.selected {
+  color: #fff;
+  background: var(--low);
+}
+.mood-low.selected small {
+  color: rgba(255, 255, 255, 0.72);
+}
+.mood-daily.selected {
+  background: var(--daily);
+}
+.mood-hope.selected {
+  color: #fff;
+  background: var(--hope);
+}
+.mood-hope.selected small {
+  color: rgba(255, 255, 255, 0.74);
+}
 
 .textarea-wrap {
   position: relative;
@@ -750,7 +772,9 @@ button:disabled {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .result-workbench {
@@ -880,8 +904,13 @@ button:disabled {
 }
 
 @keyframes auto-refresh-pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .source-list {
@@ -954,7 +983,8 @@ button:disabled {
 }
 
 @keyframes card-placeholder-pulse {
-  0%, 100% {
+  0%,
+  100% {
     border-color: var(--primary);
     box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.3);
   }
@@ -1256,8 +1286,12 @@ button:disabled {
     text-overflow: ellipsis;
   }
 
-  .auth-backdrop { padding: 76px 14px 24px; }
-  .auth-panel { padding: 30px 22px 24px; }
+  .auth-backdrop {
+    padding: 76px 14px 24px;
+  }
+  .auth-panel {
+    padding: 30px 22px 24px;
+  }
 
   .hero-copy {
     padding-left: 28px;
@@ -1482,13 +1516,27 @@ button:disabled {
   animation: dotPulse 1.4s infinite ease-in-out;
 }
 
-.loading-dots .dot:nth-child(1) { animation-delay: 0s; }
-.loading-dots .dot:nth-child(2) { animation-delay: 0.2s; }
-.loading-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+.loading-dots .dot:nth-child(1) {
+  animation-delay: 0s;
+}
+.loading-dots .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.loading-dots .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
 
 @keyframes dotPulse {
-  0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
-  40% { transform: scale(1); opacity: 1; }
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .quick-chips {

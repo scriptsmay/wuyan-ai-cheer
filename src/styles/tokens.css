@@ -21,6 +21,6 @@
   --radius-md: 18px;
   --radius-lg: 28px;
   --shadow-signal: 0 22px 60px rgba(0, 0, 0, 0.38);
-  --font-display: "ZCOOL QingKe HuangYou", fantasy;
-  --font-body: "Noto Sans SC", sans-serif;
+  --font-display: 'ZCOOL QingKe HuangYou', fantasy;
+  --font-body: 'Noto Sans SC', sans-serif;
 }

@@ -1,11 +1,12 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import tseslint from 'typescript-eslint'
-import pluginVue from 'eslint-plugin-vue'
-import vueParser from 'vue-eslint-parser'
+import js from '@eslint/js';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
+import pluginVue from 'eslint-plugin-vue';
+import vueParser from 'vue-eslint-parser';
+import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default tseslint.config(
-  { ignores: ['dist/**', 'node_modules/**'] },
+  { ignores: ['dist/**', 'dist-verify/**', 'node_modules/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...pluginVue.configs['flat/recommended'],
@@ -17,12 +18,12 @@ export default tseslint.config(
         parser: tseslint.parser,
         ecmaVersion: 'latest',
         sourceType: 'module',
-        extraFileExtensions: ['.vue']
+        extraFileExtensions: ['.vue'],
       },
       globals: {
         ...globals.browser,
-        ...globals.node
-      }
+        ...globals.node,
+      },
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
@@ -30,11 +31,15 @@ export default tseslint.config(
       'vue/multi-word-component-names': 'off',
       'vue/max-attributes-per-line': 'off',
       'vue/singleline-html-element-content-newline': 'off',
-      'vue/html-self-closing': ['error', {
-        html: { void: 'always', normal: 'always', component: 'always' },
-        svg: 'always',
-        math: 'always'
-      }]
-    }
-  }
-)
+      'vue/html-self-closing': [
+        'error',
+        {
+          html: { void: 'always', normal: 'always', component: 'always' },
+          svg: 'always',
+          math: 'always',
+        },
+      ],
+    },
+  },
+  eslintConfigPrettier
+);

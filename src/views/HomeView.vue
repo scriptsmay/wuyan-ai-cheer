@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ArrowUpRight, Bot, CalendarCheck, RadioTower } from 'lucide-vue-next'
-import { RouterLink } from 'vue-router'
+import { ArrowUpRight, Bot, CalendarCheck, RadioTower } from '@lucide/vue';
+import { RouterLink } from 'vue-router';
 </script>
 
 <template>
@@ -8,7 +8,9 @@ import { RouterLink } from 'vue-router'
     <div class="hero-copy">
       <span class="eyebrow"><RadioTower :size="18" /> FAN SIGNAL / ONLINE</span>
       <h1>把想说的话，<br /><em>变成一张有信号的应援卡。</em></h1>
-      <p>选择心情，生成基于真实赛季快照的应援文案；问问小秘书，获取赛事数据；保存图片后，由你自由分享微博、微信或粉丝群。</p>
+      <p>
+        选择心情，生成基于真实赛季快照的应援文案；问问小秘书，获取赛事数据；保存图片后，由你自由分享微博、微信或粉丝群。
+      </p>
       <div class="hero-meta">
         <span><b>3</b> 个功能</span>
         <span><b>1080 × 1440</b> PNG</span>

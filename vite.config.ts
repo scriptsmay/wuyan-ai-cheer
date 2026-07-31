@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import { fileURLToPath } from 'node:url'
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
   plugins: [vue()],
@@ -10,23 +10,20 @@ export default defineConfig({
   resolve: {
     alias: {
       'harmonyos-sans-sc-webfont-splitted/dist/Medium.css': fileURLToPath(
-        new URL(
-          './node_modules/harmonyos-sans-sc-webfont-splitted/dist/Medium.css',
-          import.meta.url,
-        ),
+        new URL('./node_modules/harmonyos-sans-sc-webfont-splitted/dist/Medium.css', import.meta.url)
       ),
     },
   },
   build: {
     target: 'es2020',
-    sourcemap: true
+    sourcemap: true,
   },
   server: {
     port: 5173,
-    strictPort: true
+    strictPort: true,
   },
   preview: {
     port: 4173,
-    strictPort: true
-  }
-})
+    strictPort: true,
+  },
+});
