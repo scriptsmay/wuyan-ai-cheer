@@ -1,5 +1,6 @@
 import { clearStoredAuth, emitAuthChange, getAccessToken } from './auth';
 import { getClientId } from './client-id';
+import { pairSseEvents } from './sse';
 import type { ApiErrorBody, AppConfig, CheerResult, CheckinResult, CheckinStats, Mood, MyCheckin } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.replace(/\/$/u, '');
@@ -237,22 +238,11 @@ export function generateCheerStream(
             const lines = buffer.split('\n');
             buffer = lines.pop() || '';
 
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (!trimmed) continue;
-
-              if (trimmed.startsWith('event: ')) {
-                const eventType = trimmed.slice(7);
-                const nextLine = lines[lines.indexOf(line) + 1];
-                if (nextLine?.startsWith('data: ')) {
-                  const dataStr = nextLine.slice(6);
-                  try {
-                    const data = JSON.parse(dataStr);
-                    handleEvent(eventType, data);
-                  } catch {
-                    // 忽略解析错误
-                  }
-                }
+            for (const { type, data: dataStr } of pairSseEvents(lines)) {
+              try {
+                handleEvent(type, JSON.parse(dataStr));
+              } catch {
+                // 忽略解析错误
               }
             }
 
