@@ -155,14 +155,18 @@ export function generateCheerStream(
           break;
         case 'thinking':
           if (data && typeof data === 'object' && 'text' in data) {
-            thinkingText += String(data.text);
-            callbacks.onThinking?.(thinkingText);
+            // 后端已返回完整文本，直接使用
+            const text = String(data.text);
+            thinkingText = text;
+            callbacks.onThinking?.(text);
           }
           break;
         case 'chunk':
           if (data && typeof data === 'object' && 'text' in data) {
-            fullText += String(data.text);
-            callbacks.onChunk?.(fullText, fullText);
+            // 后端已返回完整文本，直接使用
+            const text = String(data.text);
+            fullText = text;
+            callbacks.onChunk?.(text, text);
           }
           break;
         case 'complete':
