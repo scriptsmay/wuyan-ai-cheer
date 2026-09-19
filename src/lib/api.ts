@@ -49,8 +49,8 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
     url += `${sep}token=${AUTH_TOKEN}`;
   }
 
-  // 设置超时时间 60 秒
-  const defaultTimeout = 60000;
+  // 设置超时时间 180 秒
+  const defaultTimeout = 180000;
 
   let response: Response;
   try {
@@ -63,7 +63,7 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
   } catch (error) {
     const message =
       error instanceof Error && error.name === 'TimeoutError'
-        ? '请求超过 60 秒，请稍后重试'
+        ? `请求超过 ${defaultTimeout} 秒，请稍后重试`
         : '网络连接失败，请检查网络后重试';
     throw new ApiError(0, {
       code: 'NETWORK_ERROR',
@@ -75,7 +75,7 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
   if (response.status === 401) {
     // JWT 过期或无效 — 清除本地 token 并通知 UI 提示重新登录
     clearStoredAuth();
-    emitAuthChange("expired");
+    emitAuthChange('expired');
   }
 
   let payload: unknown;
@@ -166,5 +166,5 @@ export function verifySession(): Promise<{
   username: string;
   subject_id: string;
 }> {
-  return apiRequest<{ username: string; subject_id: string }>("/api/auth/me");
+  return apiRequest<{ username: string; subject_id: string }>('/api/auth/me');
 }
