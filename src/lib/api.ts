@@ -155,18 +155,17 @@ export function generateCheerStream(
           break;
         case 'thinking':
           if (data && typeof data === 'object' && 'text' in data) {
-            // 后端已返回完整文本，直接使用
-            const text = String(data.text);
-            thinkingText = text;
-            callbacks.onThinking?.(text);
+            // 后端只下发增量片段，本地累计成完整思考文本
+            thinkingText += String(data.text);
+            callbacks.onThinking?.(thinkingText);
           }
           break;
         case 'chunk':
           if (data && typeof data === 'object' && 'text' in data) {
-            // 后端已返回完整文本，直接使用
-            const text = String(data.text);
-            fullText = text;
-            callbacks.onChunk?.(text, text);
+            // 后端按行下发增量（每事件一条新增行），本地累计成全文
+            const line = String(data.text);
+            fullText = fullText ? `${fullText}\n${line}` : line;
+            callbacks.onChunk?.(line, fullText);
           }
           break;
         case 'complete':
@@ -179,6 +178,9 @@ export function generateCheerStream(
           break;
         case 'retry':
           if (data && typeof data === 'object') {
+            // 后端将重新生成，本地累计缓冲一并清零
+            fullText = '';
+            thinkingText = '';
             const message = String((data as { message?: string }).message || '正在重新润色...');
             const attempt = Number((data as { attempt?: number }).attempt || 1);
             callbacks.onRetry?.(message, attempt);
@@ -199,7 +201,9 @@ export function generateCheerStream(
       method: 'POST',
       headers,
       body: JSON.stringify({ mood, text, client_id: getClientId() }),
-      signal: AbortSignal.timeout(300000),
+      // 总时长兜底 10 分钟：后端已改为空闲超时（无数据间隔才中断），
+      // 思考型模型长推理只要数据在流动就不受此限制
+      signal: AbortSignal.timeout(600000),
     })
       .then((response) => {
         if (!response.ok) {

@@ -130,8 +130,9 @@ async function submitWithStreaming(requestId: string) {
     onThinking: (text: string) => {
       streamingThinkingText.value = text;
     },
-    onChunk: (text: string) => {
-      streamingText.value = text;
+    onChunk: (_line: string, fullText: string) => {
+      // 后端按行下发增量，api 层已累计成全文；整段覆盖渲染，行数逐次递增
+      streamingText.value = fullText;
     },
     onRetry: (msg: string, attempt: number) => {
       streamingRetryMessage.value = `${msg} (${attempt}/2)`;
