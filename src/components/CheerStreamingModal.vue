@@ -75,13 +75,7 @@ onMounted(() => {
             <Sparkles :size="20" class="sparkle-icon" />
             <span class="header-title">AI 应援文案生成中</span>
           </div>
-          <button
-            v-if="!isLoading"
-            class="close-button"
-            type="button"
-            @click="handleClose"
-            aria-label="关闭"
-          >
+          <button v-if="!isLoading" class="close-button" type="button" @click="handleClose" aria-label="关闭">
             <X :size="20" />
           </button>
           <span v-else class="connecting-indicator">
@@ -94,11 +88,7 @@ onMounted(() => {
         <div class="modal-body">
           <!-- 思考过程区 -->
           <div v-if="thinkingText || retryMessage" class="thinking-section">
-            <button
-              type="button"
-              class="thinking-toggle"
-              @click="showThinking = !showThinking"
-            >
+            <button type="button" class="thinking-toggle" @click="showThinking = !showThinking">
               <span class="thinking-label">
                 <span class="thinking-dot" />
                 AI 构思中...
@@ -128,11 +118,7 @@ onMounted(() => {
           <!-- 打字机输出区 -->
           <div class="typewriter-section">
             <div class="typewriter-lines">
-              <p
-                v-for="(line, idx) in displayLines"
-                :key="idx"
-                class="typewriter-line"
-              >
+              <p v-for="(line, idx) in displayLines" :key="idx" class="typewriter-line">
                 {{ line }}
                 <span v-if="idx === displayLines.length - 1 && isLoading" class="cursor">|</span>
               </p>
@@ -155,12 +141,7 @@ onMounted(() => {
 
         <!-- 底部操作区 -->
         <footer class="modal-footer">
-          <button
-            v-if="showCompleteButton"
-            type="button"
-            class="primary-button complete-button"
-            @click="handleClose"
-          >
+          <button v-if="showCompleteButton" type="button" class="primary-button complete-button" @click="handleClose">
             查看完整文案
           </button>
         </footer>
@@ -183,13 +164,17 @@ onMounted(() => {
 }
 
 @keyframes overlay-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-container {
   width: 90%;
-  max-width: 560px;
+  max-width: 640px;
   max-height: 80vh;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -273,8 +258,12 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .modal-body {
@@ -323,8 +312,13 @@ onMounted(() => {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .toggle-hint {
@@ -405,8 +399,13 @@ onMounted(() => {
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 .complete-badge {
