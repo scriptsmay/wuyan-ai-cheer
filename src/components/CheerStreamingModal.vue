@@ -33,12 +33,16 @@ const showThinking = ref(false);
 
 const thinkingLines = computed(() => {
   if (!props.thinkingText) return [];
-  return props.thinkingText.split('\n').filter((line: string) => line.trim());
+  // 清理多余的 { 符号并分割成行
+  const cleaned = props.thinkingText.replace(/\{/g, '').replace(/\}/g, '');
+  return cleaned.split('\n').filter((line: string) => line.trim());
 });
 
 const displayLines = computed(() => {
   if (!props.streamingText) return [];
-  return props.streamingText.split('\n').filter((line: string) => line.trim());
+  // 清理多余的 { 符号并分割成行
+  const cleaned = props.streamingText.replace(/\{/g, '').replace(/\}/g, '');
+  return cleaned.split('\n').filter((line: string) => line.trim());
 });
 
 const showCompleteButton = computed(() => props.isComplete && props.result);
@@ -376,11 +380,18 @@ onMounted(() => {
   font-size: 15px;
   line-height: 1.8;
   color: #e5e7eb;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .typewriter-line {
   margin: 0;
   padding: 4px 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .cursor {

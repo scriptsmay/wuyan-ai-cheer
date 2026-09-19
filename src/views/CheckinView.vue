@@ -1,17 +1,40 @@
 <script setup lang="ts">
 import { CalendarCheck, Image as ImageIcon, RadioTower } from '@lucide/vue';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import CheerResultPanel from '../components/CheerResultPanel.vue';
+import CheerStreamingModal from '../components/CheerStreamingModal.vue';
 import StatusPanel from '../components/StatusPanel.vue';
 import { ApiError, createCheckin, generateCheer, getCheckinStats, getMyCheckin, getMyCheckinReport } from '../lib/api';
+import { useStreaming } from '../composables/useStreaming';
 import type { CheerResult, CheckinResult, CheckinStats, MyCheckin, UiStatus } from '../types';
 
 const me = ref<MyCheckin | null>(null);
 const stats = ref<CheckinStats | null>(null);
 const result = ref<CheckinResult | null>(null);
-const cheer = ref<CheerResult | null>(null);
 const status = ref<UiStatus>('loading');
 const message = ref('');
+
+const {
+  useStreaming: enableStreaming,
+  showStreamingModal,
+  streamingThinkingText,
+  streamingText,
+  streamingRetryMessage,
+  streamingError,
+  isStreamingComplete,
+  result: streamingResult,
+  submitWithStreaming,
+  handleCloseStreamingModal,
+} = useStreaming({
+  onStreamingComplete: (cheerResult: CheerResult) => {
+    handleCheckinComplete(cheerResult);
+  },
+  onError: (code: string, msg: string) => {
+    handleError({ code, message: msg });
+  },
+});
+
+const cheer = computed(() => streamingResult.value);
 
 onMounted(load);
 
@@ -29,25 +52,35 @@ async function load() {
 
 async function checkIn(regenerate = false) {
   if (status.value === 'loading') return;
-  status.value = 'loading';
-  try {
-    const requestId = crypto.randomUUID();
-    const nextCheer =
-      !regenerate && cheer.value ? cheer.value : await generateCheer('daily', '今天也来完成每日加油打卡', requestId);
-    const nextResult = await createCheckin(nextCheer.report_id);
-    cheer.value = nextCheer;
-    result.value = nextResult;
-    me.value = {
-      checked_in_today: true,
-      streak: nextResult.checkin.streak,
-      total_days: nextResult.checkin.total_days,
-      today: nextResult.checkin,
-    };
-    if (stats.value) stats.value.today_count = nextResult.today_count;
-    status.value = 'success';
-  } catch (error) {
-    handleError(error);
+
+  const requestId = crypto.randomUUID();
+  
+  if (enableStreaming.value) {
+    await submitWithStreaming('daily', '今天也来完成每日加油打卡', requestId);
+  } else {
+    // 降级同步模式
+    status.value = 'loading';
+    try {
+      const nextCheer =
+        !regenerate && cheer.value ? cheer.value : await generateCheer('daily', '今天也来完成每日加油打卡', requestId);
+      await handleCheckinComplete(nextCheer);
+    } catch (error) {
+      handleError(error);
+    }
   }
+}
+
+async function handleCheckinComplete(cheerResult: CheerResult) {
+  const nextResult = await createCheckin(cheerResult.report_id);
+  result.value = nextResult;
+  me.value = {
+    checked_in_today: true,
+    streak: nextResult.checkin.streak,
+    total_days: nextResult.checkin.total_days,
+    today: nextResult.checkin,
+  };
+  if (stats.value) stats.value.today_count = nextResult.today_count;
+  status.value = 'success';
 }
 
 async function viewTodayReport() {
@@ -55,7 +88,7 @@ async function viewTodayReport() {
   status.value = 'loading';
   try {
     const report = await getMyCheckinReport();
-    cheer.value = report;
+    streamingResult.value = report;
     result.value = {
       checkin: me.value!.today!,
       already_checked_in: true,
@@ -146,5 +179,20 @@ function handleError(error: unknown) {
       </StatusPanel>
       <CheerResultPanel v-if="cheer && result" :result="cheer" :checkin="result.checkin" @regenerate="checkIn(true)" />
     </div>
+
+    <!-- 流式输出 Modal -->
+    <CheerStreamingModal
+      v-if="showStreamingModal"
+      :is-open="showStreamingModal"
+      :mood="'daily'"
+      :is-loading="status === 'loading' && !isStreamingComplete"
+      :thinking-text="streamingThinkingText"
+      :streaming-text="streamingText"
+      :retry-message="streamingRetryMessage"
+      :is-complete="isStreamingComplete"
+      :result="cheer"
+      :error-message="streamingError"
+      @close="handleCloseStreamingModal"
+    />
   </section>
 </template>
