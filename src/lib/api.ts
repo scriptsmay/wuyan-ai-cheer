@@ -42,14 +42,12 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
     }
   }
 
-  // 匿名访问时使用 query token 回落鉴权
   let url = `${API_BASE_URL}${path}`;
   if (options.auth !== false && !headers.Authorization && AUTH_TOKEN) {
     const sep = path.includes('?') ? '&' : '?';
     url += `${sep}token=${AUTH_TOKEN}`;
   }
 
-  // 设置超时时间 180 秒
   const defaultTimeout = 180000;
 
   let response: Response;
@@ -73,7 +71,6 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
   }
 
   if (response.status === 401) {
-    // JWT 过期或无效 — 清除本地 token 并通知 UI 提示重新登录
     clearStoredAuth();
     emitAuthChange('expired');
   }
@@ -120,6 +117,161 @@ function normalizeErrorBody(payload: unknown, requestId: string): ApiErrorBody {
   };
 }
 
+export interface CheerStreamCallbacks {
+  onConnected?: (requestId: string) => void;
+  onThinking?: (text: string) => void;
+  onChunk?: (text: string, fullText: string) => void;
+  onComplete?: (result: CheerResult) => void;
+  onRetry?: (message: string, attempt: number) => void;
+  onError?: (code: string, message: string) => void;
+}
+
+export function generateCheerStream(
+  mood: Mood,
+  text: string,
+  requestId: string,
+  callbacks: CheerStreamCallbacks = {}
+): Promise<CheerResult> {
+  return new Promise((resolve, reject) => {
+    const url = `${API_BASE_URL}/api/cheer/stream`;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'X-Request-Id': requestId,
+    };
+
+    const token = getAccessToken(false);
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    let fullText = '';
+    let thinkingText = '';
+    let isFinished = false;
+
+    function handleEvent(eventType: string, data: unknown) {
+      switch (eventType) {
+        case 'connected':
+          callbacks.onConnected?.(requestId);
+          break;
+        case 'thinking':
+          if (data && typeof data === 'object' && 'text' in data) {
+            thinkingText += String(data.text);
+            callbacks.onThinking?.(thinkingText);
+          }
+          break;
+        case 'chunk':
+          if (data && typeof data === 'object' && 'text' in data) {
+            fullText += String(data.text);
+            callbacks.onChunk?.(fullText, fullText);
+          }
+          break;
+        case 'complete':
+          if (data && typeof data === 'object') {
+            isFinished = true;
+            const result = data as CheerResult;
+            callbacks.onComplete?.(result);
+            resolve(result);
+          }
+          break;
+        case 'retry':
+          if (data && typeof data === 'object') {
+            const message = String((data as { message?: string }).message || '正在重新润色...');
+            const attempt = Number((data as { attempt?: number }).attempt || 1);
+            callbacks.onRetry?.(message, attempt);
+          }
+          break;
+        case 'error':
+          if (data && typeof data === 'object') {
+            const code = String((data as { code?: string }).code || 'UNKNOWN_ERROR');
+            const message = String((data as { message?: string }).message || '生成失败');
+            callbacks.onError?.(code, message);
+            reject(new ApiError(0, { code, message, request_id: requestId }));
+          }
+          break;
+      }
+    }
+
+    fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ mood, text, client_id: getClientId() }),
+      signal: AbortSignal.timeout(300000),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then((err) => {
+            throw new ApiError(response.status, err);
+          });
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('无法读取响应流');
+        }
+
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+
+        function processStream(currentReader: ReadableStreamDefaultReader<Uint8Array>) {
+          currentReader.read().then(({ done, value }) => {
+            if (done) {
+              if (!isFinished) {
+                reject(new ApiError(0, {
+                  code: 'STREAM_INTERRUPTED',
+                  message: '流连接意外中断',
+                  request_id: requestId,
+                }));
+              }
+              return;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed) continue;
+
+              if (trimmed.startsWith('event: ')) {
+                const eventType = trimmed.slice(7);
+                const nextLine = lines[lines.indexOf(line) + 1];
+                if (nextLine?.startsWith('data: ')) {
+                  const dataStr = nextLine.slice(6);
+                  try {
+                    const data = JSON.parse(dataStr);
+                    handleEvent(eventType, data);
+                  } catch {
+                    // 忽略解析错误
+                  }
+                }
+              }
+            }
+
+            if (!isFinished) {
+              processStream(currentReader);
+            }
+          }).catch((err) => {
+            if (!isFinished) {
+              reject(new ApiError(0, {
+                code: 'STREAM_ERROR',
+                message: err.message || '流读取失败',
+                request_id: requestId,
+              }));
+            }
+          });
+        }
+
+        processStream(reader);
+      })
+      .catch((err) => {
+        if (!isFinished) {
+          reject(err);
+        }
+      });
+  });
+}
+
 export function generateCheer(mood: Mood, text: string, requestId: string): Promise<CheerResult> {
   return apiRequest<CheerResult>('/api/cheer', {
     method: 'POST',
@@ -153,7 +305,6 @@ export function getCheckinStats(): Promise<CheckinStats> {
 export function askQuestion(q: string, requestId: string): Promise<{ answer: string }> {
   return apiRequest<{ answer: string }>('/api/ask', {
     method: 'POST',
-    requestId,
     body: { q, client_id: getClientId() },
   });
 }

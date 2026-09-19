@@ -4,7 +4,8 @@ import { computed, onMounted, ref } from 'vue';
 import MoodSelector from '../components/MoodSelector.vue';
 import StatusPanel from '../components/StatusPanel.vue';
 import CheerResultPanel from '../components/CheerResultPanel.vue';
-import { ApiError, generateCheer, getConfig } from '../lib/api';
+import CheerStreamingModal from '../components/CheerStreamingModal.vue';
+import { ApiError, generateCheer, generateCheerStream, getConfig, type CheerStreamCallbacks } from '../lib/api';
 import { getDailyUsage, incrementDailyUsage, usageKey } from '../lib/usage-limit';
 import type { AppConfig, CheerResult, Mood, UiStatus } from '../types';
 
@@ -15,6 +16,15 @@ const message = ref('');
 const result = ref<CheerResult | null>(null);
 const lastRequestId = ref('');
 
+// 流式模式相关状态
+const useStreaming = ref(true);
+const showStreamingModal = ref(false);
+const streamingThinkingText = ref('');
+const streamingText = ref('');
+const streamingRetryMessage = ref('');
+const streamingError = ref('');
+const isStreamingComplete = ref(false);
+
 const dailyLimit = ref(10);
 const usedCount = ref(0);
 const limitReached = computed(() => usedCount.value >= dailyLimit.value);
@@ -23,6 +33,11 @@ const cheerRemaining = computed(() => dailyLimit.value - usedCount.value);
 onMounted(() => {
   loadUsage();
   loadConfig();
+  // 检查是否启用流式模式
+  const streamingPref = localStorage.getItem('vite_use_streaming');
+  if (streamingPref !== null) {
+    useStreaming.value = streamingPref === 'true';
+  }
 });
 
 function loadUsage() {
@@ -42,6 +57,14 @@ async function loadConfig() {
 
 const remaining = computed(() => 120 - Array.from(customText.value).length);
 
+function resetStreamingState() {
+  streamingThinkingText.value = '';
+  streamingText.value = '';
+  streamingRetryMessage.value = '';
+  streamingError.value = '';
+  isStreamingComplete.value = false;
+}
+
 async function submit(regenerate = false) {
   if (status.value === 'loading') return;
 
@@ -51,10 +74,23 @@ async function submit(regenerate = false) {
     return;
   }
 
-  status.value = 'loading';
-  message.value = '';
   const requestId = regenerate || !lastRequestId.value ? crypto.randomUUID() : lastRequestId.value;
   lastRequestId.value = requestId;
+
+  if (useStreaming.value) {
+    // 使用流式模式
+    await submitWithStreaming(requestId);
+  } else {
+    // 使用同步模式
+    await submitSync(requestId);
+  }
+}
+
+async function submitSync(requestId: string) {
+  status.value = 'loading';
+  message.value = '';
+  resetStreamingState();
+
   try {
     const next = await generateCheer(mood.value, customText.value.trim(), requestId);
     if (!next.lines.length) {
@@ -78,6 +114,69 @@ async function submit(regenerate = false) {
       message.value = error instanceof Error ? error.message : '生成失败，请稍后重试';
       status.value = 'service-error';
     }
+  }
+}
+
+async function submitWithStreaming(requestId: string) {
+  resetStreamingState();
+  showStreamingModal.value = true;
+  status.value = 'loading';
+  message.value = '';
+
+  const callbacks: CheerStreamCallbacks = {
+    onConnected: () => {
+      // 已连接，等待数据
+    },
+    onThinking: (text: string) => {
+      streamingThinkingText.value = text;
+    },
+    onChunk: (text: string) => {
+      streamingText.value = text;
+    },
+    onRetry: (msg: string, attempt: number) => {
+      streamingRetryMessage.value = `${msg} (${attempt}/2)`;
+      // 重置状态，重新开始
+      streamingThinkingText.value = '';
+      streamingText.value = '';
+    },
+    onComplete: (resultData: CheerResult) => {
+      isStreamingComplete.value = true;
+      result.value = resultData;
+      usedCount.value = incrementDailyUsage(usageKey('cheer'));
+      status.value = 'success';
+    },
+    onError: (code: string, msg: string) => {
+      streamingError.value = msg;
+      status.value = 'service-error';
+      message.value = msg;
+    },
+  };
+
+  try {
+    await generateCheerStream(mood.value, customText.value.trim(), requestId, callbacks);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      streamingError.value = error.message;
+      message.value = `${error.message}${error.requestId ? `（请求 ${error.requestId.slice(0, 8)}）` : ''}`;
+      status.value =
+        error.code === 'RATE_LIMITED'
+          ? 'rate-limited'
+          : error.code === 'NETWORK_ERROR'
+            ? 'network-error'
+            : 'service-error';
+    } else {
+      streamingError.value = error instanceof Error ? error.message : '生成失败';
+      message.value = streamingError.value;
+      status.value = 'service-error';
+    }
+  }
+}
+
+function handleStreamingModalClose() {
+  showStreamingModal.value = false;
+  // 如果已完成，显示结果面板
+  if (isStreamingComplete.value && result.value) {
+    status.value = 'success';
   }
 }
 </script>
@@ -126,7 +225,7 @@ async function submit(regenerate = false) {
       </section>
 
       <StatusPanel
-        v-if="status !== 'success'"
+        v-if="status !== 'success' && !showStreamingModal"
         :status="status"
         :message="message || undefined"
         :retryable="status === 'network-error' || status === 'service-error' || status === 'empty'"
@@ -140,5 +239,20 @@ async function submit(regenerate = false) {
         @regenerate="submit(true)"
       />
     </div>
+
+    <!-- 流式输出 Modal -->
+    <CheerStreamingModal
+      v-if="showStreamingModal"
+      :is-open="showStreamingModal"
+      :mood="mood"
+      :is-loading="status === 'loading' && !isStreamingComplete"
+      :thinking-text="streamingThinkingText"
+      :streaming-text="streamingText"
+      :retry-message="streamingRetryMessage"
+      :is-complete="isStreamingComplete"
+      :result="result"
+      :error-message="streamingError"
+      @close="handleStreamingModalClose"
+    />
   </section>
 </template>
