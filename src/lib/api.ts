@@ -127,12 +127,14 @@ export interface CheerStreamCallbacks {
   onError?: (code: string, message: string) => void;
 }
 
-export function generateCheerStream(
+export async function generateCheerStream(
   mood: Mood,
   text: string,
   requestId: string,
   callbacks: CheerStreamCallbacks = {}
 ): Promise<CheerResult> {
+  // getAccessToken 是 async：不 await 会把 Promise 塞进 Bearer 头，后端 JWT 校验失败将静默降级为匿名身份
+  const token = await getAccessToken(false);
   return new Promise((resolve, reject) => {
     const url = `${API_BASE_URL}/api/cheer/stream`;
     const headers: Record<string, string> = {
@@ -140,7 +142,6 @@ export function generateCheerStream(
       'X-Request-Id': requestId,
     };
 
-    const token = getAccessToken(false);
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
