@@ -203,8 +203,6 @@ export async function generateCheerStream(
       method: 'POST',
       headers,
       body: JSON.stringify({ mood, text, client_id: getClientId() }),
-      // 总时长兜底 10 分钟：后端已改为空闲超时（无数据间隔才中断），
-      // 思考型模型长推理只要数据在流动就不受此限制
       signal: AbortSignal.timeout(600000),
     })
       .then((response) => {

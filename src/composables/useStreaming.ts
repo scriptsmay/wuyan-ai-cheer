@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { generateCheerStream, type CheerStreamCallbacks } from '../lib/api';
+import { ApiError, generateCheerStream, type CheerStreamCallbacks } from '../lib/api';
 import type { CheerResult, Mood } from '../types';
 
 export interface UseStreamingOptions {
@@ -43,6 +43,7 @@ export function useStreaming(options: UseStreamingOptions = {}) {
     resetStreamingState();
     showStreamingModal.value = true;
 
+    let streamErrorReported = false;
     const callbacks: CheerStreamCallbacks = {
       onConnected: () => {},
       onThinking: (text: string) => {
@@ -65,6 +66,8 @@ export function useStreaming(options: UseStreamingOptions = {}) {
         onComplete?.(resultData);
       },
       onError: (code: string, msg: string) => {
+        if (streamErrorReported) return;
+        streamErrorReported = true;
         streamingError.value = msg;
         options.onError?.(code, msg);
       },
@@ -73,9 +76,10 @@ export function useStreaming(options: UseStreamingOptions = {}) {
     try {
       await generateCheerStream(mood, text.trim(), requestId, callbacks);
     } catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof Error && !streamErrorReported) {
+        const code = error instanceof ApiError ? error.code : 'UNKNOWN_ERROR';
         streamingError.value = error.message;
-        options.onError?.('UNKNOWN_ERROR', error.message);
+        options.onError?.(code, error.message);
       }
     }
   }
