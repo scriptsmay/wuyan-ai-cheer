@@ -142,8 +142,8 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   // 连续天数：红笔手绘圈注（无打卡数据时跳过）
   if (checkin) {
-    const cx = 872;
-    const cy = 424;
+    const cx = 702;
+    const cy = 204;
     drawWobblyEllipse(context, rng, cx, cy, 168, 108, RED_PEN, 6, 1);
     if (rng.bool(0.6))
       drawWobblyEllipse(
@@ -177,7 +177,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
   });
   context.font = fitted.font;
   context.fillStyle = INK;
-  const copyTop = 648;
+  const copyTop = 508;
   // 荧光笔垫在第一行底下
   const marker = rng.pick(MARKERS);
   if (fitted.lines.length) {

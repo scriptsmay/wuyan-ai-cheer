@@ -185,16 +185,29 @@ async function draw(ctx: TemplateContext): Promise<void> {
   );
   await drawSeal(ctx, variant);
 
-  // 主文案：黄油体特大字 + 错位套印阴影
-  const fitted = await fitText(context, input.line, FAMILY_TITLE, {
+  // 主文案：黄油体特大字 + 错位套印阴影。顶部按 4 行预留（线上文案普遍 30 字+）：
+  // 四行排满时字号上限按标语区下限反推，保证大字不压心情标语
+  const copyTop = 336;
+  const captionGap = 104;
+  const captionMax = 868;
+  let fitted = await fitText(context, input.line, FAMILY_TITLE, {
     maxWidth: 900,
     maxLines: 4,
     maxSize: 148,
-    minSize: 84,
+    minSize: 78,
     lineHeightRatio: 1.2,
     weight: 400,
   });
-  const copyTop = 372;
+  if (fitted.lines.length === 4 && copyTop + fitted.lineHeight * 3 > captionMax - captionGap) {
+    fitted = await fitText(context, input.line, FAMILY_TITLE, {
+      maxWidth: 900,
+      maxLines: 4,
+      maxSize: Math.floor((captionMax - captionGap - copyTop) / 3 / 1.2),
+      minSize: 78,
+      lineHeightRatio: 1.2,
+      weight: 400,
+    });
+  }
   const offsetX = rng.range(5, 8);
   const offsetY = rng.range(4, 7);
   context.font = fitted.font;
@@ -209,7 +222,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   // 心情标语 + 强调色条
   const copyBottom = copyTop + (fitted.lines.length - 1) * fitted.lineHeight;
-  const captionY = Math.min(copyBottom + 104, 838);
+  const captionY = Math.min(copyBottom + captionGap, captionMax);
   if (input.emojiCaption) {
     const font = `400 50px ${FAMILY_TITLE}`;
     context.font = font;

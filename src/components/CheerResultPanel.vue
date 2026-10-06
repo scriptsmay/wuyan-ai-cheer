@@ -18,7 +18,8 @@ const copied = ref(false);
 const card = ref<RenderedCard | null>(null);
 const cardLoading = ref(false);
 const cardError = ref('');
-const showQr = ref(true);
+// 默认不显示二维码，显示赛季数据
+const showQr = ref(false);
 const showRefs = ref(true);
 // 换一换：同一天内主动换样式时递增，参与卡片种子派生
 const variant = ref(0);
