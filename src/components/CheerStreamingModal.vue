@@ -75,7 +75,7 @@ onMounted(() => {
             <Sparkles :size="20" class="sparkle-icon" />
             <span class="header-title">AI 应援文案生成中</span>
           </div>
-          <button v-if="!isLoading" class="close-button" type="button" @click="handleClose" aria-label="关闭">
+          <button v-if="!isLoading" class="close-button" type="button" aria-label="关闭" @click="handleClose">
             <X :size="20" />
           </button>
           <span v-else class="connecting-indicator">

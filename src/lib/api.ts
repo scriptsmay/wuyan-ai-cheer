@@ -299,7 +299,7 @@ export function getCheckinStats(): Promise<CheckinStats> {
   return apiRequest<CheckinStats>('/api/checkins/stats', { auth: false });
 }
 
-export function askQuestion(q: string, requestId: string): Promise<{ answer: string }> {
+export function askQuestion(q: string, _requestId: string): Promise<{ answer: string }> {
   return apiRequest<{ answer: string }>('/api/ask', {
     method: 'POST',
     body: { q, client_id: getClientId() },
