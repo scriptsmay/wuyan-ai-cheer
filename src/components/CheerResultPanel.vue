@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, Clipboard, Download, Image as ImageIcon, RefreshCw } from '@lucide/vue';
+import { Check, Clipboard, Download, Image as ImageIcon, RefreshCw, Shuffle } from '@lucide/vue';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { copyText } from '../lib/clipboard';
 import { downloadCard, requiresLongPressSave } from '../lib/download';
@@ -20,6 +20,8 @@ const cardLoading = ref(false);
 const cardError = ref('');
 const showQr = ref(true);
 const showRefs = ref(true);
+// 换一换：同一天内主动换样式时递增，参与卡片种子派生
+const variant = ref(0);
 
 // ---- Manual editing state ----
 const editingLine = ref('');
@@ -41,6 +43,7 @@ watch(
     selectedIndex.value = 0;
     card.value = null;
     cardError.value = '';
+    variant.value = 0;
     syncEditingFromResult();
   },
   { immediate: true }
@@ -97,6 +100,7 @@ async function handleRender() {
       showQr: showQr.value,
       showRefs: showRefs.value,
       mood: props.mood,
+      variant: variant.value,
     });
   } catch (error) {
     cardError.value = error instanceof Error ? error.message : '应援卡生成失败';
@@ -107,6 +111,11 @@ async function handleRender() {
 
 function handleDownload() {
   if (card.value) downloadCard(card.value);
+}
+
+function handleShuffle() {
+  variant.value += 1;
+  handleRender();
 }
 </script>
 
@@ -212,6 +221,9 @@ function handleDownload() {
         @click="handleDownload"
       >
         <Download :size="18" /> 下载 PNG
+      </button>
+      <button v-if="card" class="text-button" type="button" @click="handleShuffle">
+        <Shuffle :size="16" /> 换一换样式
       </button>
       <button v-if="card" class="text-button" type="button" @click="handleRender">按当前文案重新合成</button>
     </div>

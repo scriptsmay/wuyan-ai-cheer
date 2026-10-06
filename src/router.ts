@@ -12,3 +12,12 @@ export const router = createRouter({
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 });
+
+// 仅 dev 构建注册模板预览页（生产树摇掉，不暴露入口）
+if (import.meta.env.DEV) {
+  router.addRoute({
+    path: '/preview/cards',
+    name: 'card-preview',
+    component: () => import('./views/CardPreviewView.vue'),
+  });
+}
