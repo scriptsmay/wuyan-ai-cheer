@@ -122,8 +122,8 @@ onMounted(renderAll);
 .card-preview-page {
   min-height: 100vh;
   padding: 32px;
-  background: #14161c;
-  color: #e8e8e8;
+  background: var(--bg);
+  color: var(--text);
 }
 .preview-header {
   display: flex;
@@ -136,10 +136,10 @@ onMounted(renderAll);
 }
 .reroll-all {
   padding: 8px 18px;
-  border: 1px solid #4a4f5c;
+  border: 1px solid var(--line);
   border-radius: 8px;
   background: transparent;
-  color: #e8e8e8;
+  color: var(--text);
   cursor: pointer;
 }
 .preview-grid {
@@ -162,15 +162,15 @@ onMounted(renderAll);
 .preview-grid small {
   display: block;
   margin-top: 6px;
-  color: #8a8f9c;
+  color: var(--text-dim);
   font-size: 12px;
 }
 .rendering {
   display: grid;
   place-items: center;
   aspect-ratio: 3 / 4;
-  border: 1px dashed #4a4f5c;
+  border: 1px dashed var(--line);
   border-radius: 8px;
-  color: #8a8f9c;
+  color: var(--text-dim);
 }
 </style>

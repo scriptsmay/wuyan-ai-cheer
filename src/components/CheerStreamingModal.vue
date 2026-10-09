@@ -158,8 +158,9 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
+  padding: 20px;
+  background-color: var(--overlay);
+  backdrop-filter: blur(14px) saturate(1.2);
   animation: overlay-in 0.2s ease-out;
 }
 
@@ -176,15 +177,15 @@ onMounted(() => {
   width: 90%;
   max-width: 640px;
   max-height: 80vh;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--panel);
+  border: 1px solid var(--line);
   border-radius: 20px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.5),
-    0 0 60px rgba(139, 92, 246, 0.15);
+    0 1px 0 var(--inset-highlight) inset,
+    var(--shadow-float);
   animation: modal-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -204,8 +205,8 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--line-soft);
+  background: color-mix(in srgb, var(--primary) 7%, transparent);
 }
 
 .header-left {
@@ -215,14 +216,14 @@ onMounted(() => {
 }
 
 .sparkle-icon {
-  color: #fbbf24;
-  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.5));
+  color: var(--secondary);
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--secondary) 55%, transparent));
 }
 
 .header-title {
   font-size: 16px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text);
   letter-spacing: 0.02em;
 }
 
@@ -232,16 +233,17 @@ onMounted(() => {
   justify-content: center;
   width: 36px;
   height: 36px;
-  border: none;
+  border: 1px solid var(--line-soft);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: var(--card-strong);
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .close-button:hover {
-  background: rgba(255, 255, 255, 0.15);
+  color: var(--text);
+  border-color: var(--primary);
   transform: scale(1.05);
 }
 
@@ -249,7 +251,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #fbbf24;
+  color: var(--secondary);
   font-size: 14px;
 }
 
@@ -283,18 +285,18 @@ onMounted(() => {
   justify-content: space-between;
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--line-soft);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.03);
-  color: #9ca3af;
+  background: color-mix(in srgb, var(--primary) 5%, transparent);
+  color: var(--text-muted);
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .thinking-toggle:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+  border-color: var(--line);
 }
 
 .thinking-label {
@@ -306,7 +308,7 @@ onMounted(() => {
 .thinking-dot {
   width: 6px;
   height: 6px;
-  background: #fbbf24;
+  background: var(--secondary);
   border-radius: 50%;
   animation: pulse 1.5s ease-in-out infinite;
 }
@@ -333,9 +335,9 @@ onMounted(() => {
   margin-top: 12px;
   padding: 12px 16px;
   border-radius: 10px;
-  background: rgba(251, 191, 36, 0.1);
-  border: 1px solid rgba(251, 191, 36, 0.2);
-  color: #fbbf24;
+  background: color-mix(in srgb, var(--secondary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--secondary) 32%, transparent);
+  color: var(--secondary);
   font-size: 14px;
 }
 
@@ -343,17 +345,17 @@ onMounted(() => {
   margin-top: 12px;
   padding: 16px;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--bg);
+  border: 1px solid var(--line-soft);
 }
 
 .thinking-line {
   margin: 0;
   padding: 4px 0;
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--text-muted);
   line-height: 1.6;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--hairline);
 }
 
 .thinking-line:last-child {
@@ -365,15 +367,15 @@ onMounted(() => {
   position: relative;
   padding: 24px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--bg);
+  border: 1px solid var(--line-soft);
   min-height: 200px;
 }
 
 .typewriter-lines {
   font-size: 15px;
   line-height: 1.8;
-  color: #e5e7eb;
+  color: var(--text);
   word-wrap: break-word;
   word-break: break-word;
   overflow-wrap: break-word;
@@ -392,7 +394,7 @@ onMounted(() => {
   display: inline-block;
   width: 2px;
   height: 1em;
-  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+  background: linear-gradient(180deg, var(--secondary) 0%, var(--primary) 100%);
   margin-left: 2px;
   animation: blink 1s step-end infinite;
   vertical-align: text-bottom;
@@ -416,9 +418,9 @@ onMounted(() => {
   margin-top: 16px;
   padding: 12px;
   border-radius: 10px;
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.2);
-  color: #22c55e;
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+  color: var(--success);
   font-size: 14px;
   font-weight: 500;
 }
@@ -428,21 +430,21 @@ onMounted(() => {
   margin-top: 16px;
   padding: 16px;
   border-radius: 10px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
 }
 
 .error-message {
   margin: 0;
-  color: #fca5a5;
+  color: var(--danger);
   font-size: 14px;
 }
 
 /* 底部 */
 .modal-footer {
   padding: 16px 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid var(--line-soft);
+  background: color-mix(in srgb, var(--primary) 5%, transparent);
 }
 
 .primary-button {
@@ -457,14 +459,14 @@ onMounted(() => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+  background: linear-gradient(135deg, var(--primary-soft) 0%, var(--primary) 100%);
+  color: var(--on-primary);
+  box-shadow: var(--glow-btn);
 }
 
 .primary-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+  box-shadow: 0 8px 26px color-mix(in srgb, var(--primary) 45%, transparent);
 }
 
 .primary-button:active {

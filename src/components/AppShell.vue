@@ -3,6 +3,7 @@ import { LogIn, Radio, ShieldCheck, UserRound } from '@lucide/vue';
 import { RouterLink, useRoute } from 'vue-router';
 import { onMounted, onUnmounted, ref } from 'vue';
 import AuthDialog from './AuthDialog.vue';
+import ThemeToggle from './ThemeToggle.vue';
 import { verifySession } from '../lib/api';
 import {
   getAuthSnapshot,
@@ -88,12 +89,15 @@ onUnmounted(() => unsubAuth?.());
         <RouterLink :class="{ active: route.name === 'secretary' }" to="/secretary"> 智能问答 </RouterLink>
         <RouterLink :class="{ active: route.name === 'checkin' }" to="/checkin"> 每日打卡 </RouterLink>
       </nav>
-      <button class="security-chip auth-trigger" type="button" @click="authOpen = true">
-        <UserRound v-if="authMode === 'authenticated'" :size="15" />
-        <ShieldCheck v-else :size="15" />
-        {{ authMode === 'authenticated' ? authUsername || '已登录' : '登录账号' }}
-        <LogIn v-if="authMode !== 'authenticated'" :size="14" />
-      </button>
+      <div class="header-actions">
+        <ThemeToggle />
+        <button class="security-chip auth-trigger" type="button" @click="authOpen = true">
+          <UserRound v-if="authMode === 'authenticated'" :size="15" />
+          <ShieldCheck v-else :size="15" />
+          {{ authMode === 'authenticated' ? authUsername || '已登录' : '登录账号' }}
+          <LogIn v-if="authMode !== 'authenticated'" :size="14" />
+        </button>
+      </div>
     </header>
 
     <main>

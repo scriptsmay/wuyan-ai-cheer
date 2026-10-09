@@ -7,6 +7,29 @@
     <meta name="description" content="为 KPL 选手无言生成应援文案、应援卡并完成每日加油打卡。" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>无言应援信号站</title>
+    <script>
+      // 在样式加载前确定主题，避免深浅色切换时的首屏闪烁（FOUC）
+      (function () {
+        try {
+          var mode = localStorage.getItem('wuyan-theme');
+          if (mode !== 'light' && mode !== 'dark' && mode !== 'system') mode = 'system';
+          var resolved =
+            mode === 'system'
+              ? window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+              : mode;
+          var root = document.documentElement;
+          root.dataset.theme = resolved;
+          root.dataset.themeMode = mode;
+          root.style.colorScheme = resolved;
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0a0e1a' : '#eef4f9');
+        } catch (e) {
+          /* 忽略：回退到 CSS 默认暗色 */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>

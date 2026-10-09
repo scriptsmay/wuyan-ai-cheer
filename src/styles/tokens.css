@@ -1,10 +1,25 @@
+/*
+ * 设计令牌（Design Tokens）
+ * ─────────────────────────────────────────────────────────────
+ * 默认（:root）为暗色「信号台」主题；[data-theme='light'] 覆盖为日光亮色主题。
+ * 主题切换由 src/lib/theme.ts + 单例 useTheme 驱动：
+ *   <html data-theme="dark|light" data-theme-mode="dark|light|system">
+ * 所有页面/组件应只消费语义变量，避免再写死颜色字面量。
+ */
+
 :root {
+  color-scheme: dark;
+
+  /* —— 底色与表面 —— */
   --bg: #0a0e1a;
   --bg-elevated: #10182a;
   --card: #121d30;
   --card-strong: #17263d;
+  --panel: #101a2c;
   --line: #24435a;
   --line-soft: rgba(80, 128, 154, 0.22);
+
+  /* —— 品牌与情绪 —— */
   --primary: #00d4ff;
   --primary-soft: #8deeff;
   --secondary: #ff9f4d;
@@ -12,15 +27,108 @@
   --low: #7756a8;
   --daily: #20c7b7;
   --hope: #ff5a5f;
+
+  /* —— 文字 —— */
   --text: #f4fbff;
   --text-muted: #86a8b8;
   --text-dim: #577585;
+  --on-primary: #041219;
+  --on-secondary: #1b0e03;
+
+  /* —— 状态 —— */
   --danger: #ff7378;
   --success: #55e2b6;
+
+  /* —— 玻璃层 / 遮罩 —— */
+  --glass: rgba(10, 14, 26, 0.72);
+  --glass-strong: rgba(12, 19, 34, 0.88);
+  --surface: rgba(16, 24, 42, 0.88);
+  --surface-veil: rgba(18, 29, 48, 0.94);
+  --overlay: rgba(4, 8, 17, 0.78);
+  --inset-highlight: rgba(255, 255, 255, 0.07);
+  --hairline: rgba(255, 255, 255, 0.05);
+
+  /* —— 氛围光 —— */
+  --glow-primary: rgba(0, 212, 255, 0.1);
+  --glow-secondary: rgba(255, 159, 77, 0.09);
+  --grid-line: rgba(0, 212, 255, 0.16);
+  --ring: rgba(0, 212, 255, 0.3);
+
+  /* —— 圆角 —— */
   --radius-sm: 10px;
   --radius-md: 18px;
   --radius-lg: 28px;
+
+  /* —— 阴影 —— */
   --shadow-signal: 0 22px 60px rgba(0, 0, 0, 0.38);
+  --shadow-card: 0 18px 45px rgba(0, 0, 0, 0.42);
+  --shadow-float: 0 24px 80px rgba(0, 0, 0, 0.45);
+  --glow-btn: 0 10px 28px rgba(0, 212, 255, 0.28);
+  --glow-btn-secondary: 0 10px 28px rgba(255, 159, 77, 0.26);
+
+  /* —— 字体 —— */
   --font-display: 'ZCOOL QingKe HuangYou', fantasy;
   --font-body: 'Noto Sans SC', sans-serif;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #eef4f9;
+  --bg-elevated: #ffffff;
+  --card: #ffffff;
+  --card-strong: #e6eef6;
+  --panel: #ffffff;
+  --line: #cbdcea;
+  --line-soft: rgba(38, 92, 122, 0.16);
+
+  --primary: #007fa6;
+  --primary-soft: #17b6dd;
+  --secondary: #d9761f;
+  --victory: #d9a520;
+  --low: #6b4aa0;
+  --daily: #12a594;
+  --hope: #e0464b;
+
+  --text: #0b2130;
+  --text-muted: #45657a;
+  --text-dim: #6f8ba0;
+  --on-primary: #ffffff;
+  --on-secondary: #2a1503;
+
+  --danger: #d94448;
+  --success: #12986f;
+
+  --glass: rgba(255, 255, 255, 0.78);
+  --glass-strong: rgba(255, 255, 255, 0.92);
+  --surface: rgba(255, 255, 255, 0.9);
+  --surface-veil: #ffffff;
+  --overlay: rgba(208, 223, 237, 0.72);
+  --inset-highlight: rgba(255, 255, 255, 0.9);
+  --hairline: rgba(11, 33, 48, 0.06);
+
+  --glow-primary: rgba(0, 127, 166, 0.12);
+  --glow-secondary: rgba(217, 118, 31, 0.1);
+  --grid-line: rgba(0, 127, 166, 0.1);
+  --ring: rgba(0, 127, 166, 0.28);
+
+  --shadow-signal: 0 18px 44px rgba(23, 60, 90, 0.14);
+  --shadow-card: 0 16px 40px rgba(23, 60, 90, 0.18);
+  --shadow-float: 0 26px 70px rgba(23, 60, 90, 0.22);
+  --glow-btn: 0 10px 26px rgba(0, 127, 166, 0.24);
+  --glow-btn-secondary: 0 10px 26px rgba(217, 118, 31, 0.22);
+}
+
+/*
+ * 主题切换过渡：仅在切换瞬间加 .theme-transition，避免常态下影响动效性能。
+ */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition:
+    background-color 320ms ease,
+    border-color 320ms ease,
+    color 320ms ease,
+    box-shadow 320ms ease !important;
 }
