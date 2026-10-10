@@ -1,4 +1,5 @@
 import type { CardTemplate, TemplateContext } from '../types';
+import { selectVisibleRefs } from '../selection';
 import {
   FAMILY_BODY,
   FAMILY_TITLE,
@@ -123,7 +124,7 @@ async function drawStats(ctx: TemplateContext, variant: PosterVariant, y: number
   const labelColor = onBand ? 'rgba(246,239,224,0.65)' : 'rgba(26,21,18,0.6)';
   const valueColor = onBand ? CREAM_TEXT : INK;
 
-  const visible = input.showRefs === false ? [] : input.refs.slice(0, 2);
+  const visible = input.showRefs === false ? [] : selectVisibleRefs(input.refs, ctx.rng, 2);
   if (visible.length) {
     for (const [i, ref] of visible.entries()) {
       const x = 92 + i * 470;
@@ -185,28 +186,34 @@ async function draw(ctx: TemplateContext): Promise<void> {
   );
   await drawSeal(ctx, variant);
 
-  // 主文案：黄油体特大字 + 错位套印阴影。顶部按 4 行预留（线上文案普遍 30 字+）：
-  // 四行排满时字号上限按标语区下限反推，保证大字不压心情标语
+  // 主文案：黄油体特大字 + 错位套印阴影。
+  // 兼顾短句震撼大字与长句（50字+）完整容纳不截断：
+  // maxLines 开放至 5 行，minSize 降至 58px；根据总行数与可用高度动态反推字号上限与行距
   const copyTop = 336;
-  const captionGap = 104;
-  const captionMax = 868;
+  const captionGap = 88;
+  const captionMax = 880;
+  const availableHeight = captionMax - captionGap - copyTop;
   let fitted = await fitText(context, input.line, FAMILY_TITLE, {
     maxWidth: 900,
-    maxLines: 4,
+    maxLines: 5,
     maxSize: 148,
-    minSize: 78,
+    minSize: 58,
     lineHeightRatio: 1.2,
     weight: 400,
   });
-  if (fitted.lines.length === 4 && copyTop + fitted.lineHeight * 3 > captionMax - captionGap) {
-    fitted = await fitText(context, input.line, FAMILY_TITLE, {
-      maxWidth: 900,
-      maxLines: 4,
-      maxSize: Math.floor((captionMax - captionGap - copyTop) / 3 / 1.2),
-      minSize: 78,
-      lineHeightRatio: 1.2,
-      weight: 400,
-    });
+  if (fitted.lines.length >= 4) {
+    const linesCount = fitted.lines.length;
+    const maxAllowedSize = Math.floor(availableHeight / Math.max(linesCount - 1, 1) / 1.18);
+    if (fitted.size > maxAllowedSize) {
+      fitted = await fitText(context, input.line, FAMILY_TITLE, {
+        maxWidth: 900,
+        maxLines: 5,
+        maxSize: Math.max(maxAllowedSize, 58),
+        minSize: 58,
+        lineHeightRatio: 1.18,
+        weight: 400,
+      });
+    }
   }
   const offsetX = rng.range(5, 8);
   const offsetY = rng.range(4, 7);

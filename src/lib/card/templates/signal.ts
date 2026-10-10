@@ -1,6 +1,9 @@
 import type { CardTemplate, TemplateContext } from '../types';
+import { selectVisibleRefs } from '../selection';
 import {
   CARD_HEIGHT,
+  FAMILY_WENKAI,
+  fitText,
   CARD_WIDTH,
   FAMILY_TITLE,
   buildQrImage,
@@ -59,7 +62,7 @@ function drawBackground(ctx: TemplateContext): void {
 }
 
 async function drawStreakBadge(ctx: TemplateContext): Promise<void> {
-  const { ctx: context, theme, input } = ctx;
+  const { ctx: context, theme, input, rng } = ctx;
   const cx = 885;
   const cy = 230;
   const R = 110;
@@ -119,7 +122,7 @@ async function drawStreakBadge(ctx: TemplateContext): Promise<void> {
 }
 
 async function draw(ctx: TemplateContext): Promise<void> {
-  const { ctx: context, theme, input } = ctx;
+  const { ctx: context, theme, input, rng } = ctx;
   drawBackground(ctx);
 
   // Header
@@ -154,15 +157,19 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   await drawStreakBadge(ctx);
 
-  // 主文案
+  // 主文案：自适应字号排版，支持 50+ 字长句
   await drawText(context, 'SIGNAL / 01', 92, 415, `600 24px "Inter", "Noto Sans SC", sans-serif`, theme.primary);
-  const mainFont = `400 80px "LXGW WenKai Screen", "Noto Sans SC", sans-serif`;
-  context.font = mainFont;
-  await document.fonts.load(mainFont, input.line);
+  const copyTop = 504;
+  const fitted = await fitText(context, input.line, FAMILY_WENKAI, {
+    maxWidth: 896,
+    maxLines: 5,
+    maxSize: 80,
+    minSize: 52,
+    lineHeightRatio: 1.34,
+  });
+  context.font = fitted.font;
   context.fillStyle = '#F5FBFF';
-  const wrapped = wrapText(context, input.line, 896);
-  const rendered = wrapped.slice(0, 4);
-  rendered.forEach((row, index) => context.fillText(row, 92, 520 + index * 106));
+  fitted.lines.forEach((row, index) => context.fillText(row, 92, copyTop + index * fitted.lineHeight));
 
   // 情绪 pill
   if (input.emojiCaption) {
@@ -173,8 +180,9 @@ async function draw(ctx: TemplateContext): Promise<void> {
     const padX = 28;
     const h = 62;
     const w = tw + padX * 2;
-    const baselineY = 620 + (rendered.length - 1) * 106 + 96;
-    const top = baselineY - 44;
+    const copyBottom = copyTop + (fitted.lines.length - 1) * fitted.lineHeight;
+    const captionGap = fitted.lines.length >= 5 ? 44 : 64;
+    const top = Math.min(copyBottom + captionGap, 1000);
     context.save();
     roundRectPath(context, 92, top, w, h, h / 2);
     context.fillStyle = theme.secondary;
@@ -187,7 +195,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   // refs
   if (input.showRefs !== false) {
-    const visible = input.refs.slice(0, 2);
+    const visible = selectVisibleRefs(input.refs, rng, 2);
     if (visible.length === 0) {
       // 空状态占位卡（频段刻度）
       const x = 92;

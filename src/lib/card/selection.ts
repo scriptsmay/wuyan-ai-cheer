@@ -1,5 +1,5 @@
-import type { Mood } from '../../types';
-import { createRng, hashString } from './rng';
+import type { Mood, CheerRef } from '../../types';
+import { createRng, hashString, type CardRng } from './rng';
 
 export type TemplateId = 'note' | 'poster' | 'magazine' | 'dusk' | 'dawn' | 'signal';
 
@@ -47,4 +47,41 @@ export function resolveTemplateId(input: SelectionInput): TemplateId {
 /** 暴露给测试：确认模板选择用的哈希与 rng 同源且稳定 */
 export function selectionHash(value: string): number {
   return hashString(value);
+}
+
+/**
+ * 从可用 refs 池中确定性选取展示项（支持 PRNG 轮换）
+ * 规则：
+ * 1. refs 数量 <= count 时直接返回；
+ * 2. 数量 > count 时：
+ *    - 过滤出适合双列窄卡排版的指标（默认 value 长度 <= 10），避免常用英雄等长文案爆框；
+ *    - 若过滤后候选项不足 count，回落使用全部 refs；
+ *    - 使用 rng 进行 Fisher-Yates 洗牌抽样，保证同 seed 稳定且不重复。
+ */
+export function selectVisibleRefs(
+  refs: readonly CheerRef[] | undefined,
+  rng?: CardRng,
+  count = 2,
+  maxValueLength = 10
+): CheerRef[] {
+  if (!refs || refs.length === 0) return [];
+  if (refs.length <= count) return [...refs];
+
+  const candidatePool = refs.filter((r) => r.value.length <= maxValueLength);
+  const pool = candidatePool.length >= count ? candidatePool : [...refs];
+
+  if (!rng) {
+    return pool.slice(0, count);
+  }
+
+  // 拷贝一份索引用于洗牌
+  const indices = pool.map((_, i) => i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = rng.int(0, i);
+    const temp = indices[i]!;
+    indices[i] = indices[j]!;
+    indices[j] = temp;
+  }
+
+  return indices.slice(0, count).map((idx) => pool[idx]!);
 }

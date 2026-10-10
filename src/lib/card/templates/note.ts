@@ -1,4 +1,5 @@
 import type { CardTemplate, TemplateContext } from '../types';
+import { selectVisibleRefs } from '../selection';
 import {
   FAMILY_TITLE,
   FAMILY_WENKAI,
@@ -168,16 +169,16 @@ async function draw(ctx: TemplateContext): Promise<void> {
   }
 
   // 主文案（霞鹜文楷，自适应字号）
+  const copyTop = 488;
   const fitted = await fitText(context, input.line, FAMILY_WENKAI, {
     maxWidth: 880,
-    maxLines: 5,
+    maxLines: 6,
     maxSize: 80,
-    minSize: 54,
-    lineHeightRatio: 1.42,
+    minSize: 48,
+    lineHeightRatio: 1.36,
   });
   context.font = fitted.font;
   context.fillStyle = INK;
-  const copyTop = 508;
   // 荧光笔垫在第一行底下
   const marker = rng.pick(MARKERS);
   if (fitted.lines.length) {
@@ -188,7 +189,8 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   // 心情标语：文楷 + 红笔下划
   const copyBottom = copyTop + (fitted.lines.length - 1) * fitted.lineHeight;
-  const captionY = Math.min(copyBottom + 96, 1020);
+  const captionGap = fitted.lines.length >= 5 ? 60 : 80;
+  const captionY = Math.min(copyBottom + captionGap, 1040);
   if (input.emojiCaption) {
     const captionFont = `400 44px ${FAMILY_WENKAI}`;
     context.font = captionFont;
@@ -214,7 +216,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
   if (input.showRefs !== false && input.refs.length) {
     const listTop = 1120;
     await drawText(context, '—— 今日小记 ——', 100, listTop - 24, `400 28px ${FAMILY_WENKAI}`, INK_SOFT);
-    const visible = input.refs.slice(0, 2);
+    const visible = selectVisibleRefs(input.refs, rng, 2);
     for (const [i, ref] of visible.entries()) {
       const rowY = listTop + 46 + i * 78;
       await drawText(context, ref.label, 104, rowY, `400 32px ${FAMILY_WENKAI}`, INK);

@@ -1,4 +1,5 @@
 import type { CardTemplate, TemplateContext } from '../types';
+import { selectVisibleRefs } from '../selection';
 import {
   FAMILY_BODY,
   FAMILY_WENKAI,
@@ -74,16 +75,16 @@ async function draw(ctx: TemplateContext): Promise<void> {
   context.fillRect(110, 306, 26, 26);
 
   // 主文案：霞鹜文楷，大留白排版
+  const copyTop = 436;
   const fitted = await fitText(context, input.line, FAMILY_WENKAI, {
     maxWidth: 860,
-    maxLines: 5,
+    maxLines: 6,
     maxSize: 88,
-    minSize: 60,
-    lineHeightRatio: 1.44,
+    minSize: 50,
+    lineHeightRatio: 1.38,
   });
   context.font = fitted.font;
   context.fillStyle = INK;
-  const copyTop = 452;
   fitted.lines.forEach((row, index) => context.fillText(row, 110, copyTop + index * fitted.lineHeight));
 
   // 心情标语：细线框标签
@@ -95,7 +96,8 @@ async function draw(ctx: TemplateContext): Promise<void> {
     const tw = context.measureText(input.emojiCaption).width;
     const padX = 24;
     const h = 58;
-    const top = Math.min(copyBottom + 72, 900);
+    const captionGap = fitted.lines.length >= 5 ? 48 : 64;
+    const top = Math.min(copyBottom + captionGap, 980);
     context.strokeStyle = accent;
     context.lineWidth = 1.5;
     roundRectPath(context, 110, top, tw + padX * 2, h, 6);
@@ -112,7 +114,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
     context.moveTo(110, 1074);
     context.lineTo(970, 1074);
     context.stroke();
-    const visible = input.refs.slice(0, 2);
+    const visible = selectVisibleRefs(input.refs, rng, 2);
     for (const [i, ref] of visible.entries()) {
       const x = 110 + i * 450;
       await drawText(context, ref.label.toUpperCase(), x, 1128, `500 22px ${FAMILY_BODY}`, 'rgba(26,26,26,0.5)');

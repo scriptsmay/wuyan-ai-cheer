@@ -1,4 +1,5 @@
 import type { CardTemplate, TemplateContext } from '../types';
+import { selectVisibleRefs } from '../selection';
 import {
   FAMILY_WENKAI,
   buildQrImage,
@@ -63,16 +64,16 @@ async function draw(ctx: TemplateContext): Promise<void> {
   await drawText(context, '低谷陪伴信号', 92, 226, `400 46px ${FAMILY_WENKAI}`, 'rgba(244,239,255,0.92)');
 
   // 主文案
+  const copyTop = 468;
   const fitted = await fitText(context, input.line, FAMILY_WENKAI, {
     maxWidth: 880,
     maxLines: 6,
     maxSize: 80,
-    minSize: 54,
-    lineHeightRatio: 1.42,
+    minSize: 48,
+    lineHeightRatio: 1.36,
   });
   context.font = fitted.font;
   context.fillStyle = '#F4EFFF';
-  const copyTop = 486;
   fitted.lines.forEach((row, index) => context.fillText(row, 92, copyTop + index * fitted.lineHeight));
 
   // 心情标语：半透明紫 pill
@@ -84,7 +85,8 @@ async function draw(ctx: TemplateContext): Promise<void> {
     const tw = context.measureText(input.emojiCaption).width;
     const padX = 28;
     const h = 62;
-    const top = Math.min(copyBottom + 84, 966);
+    const captionGap = fitted.lines.length >= 5 ? 52 : 72;
+    const top = Math.min(copyBottom + captionGap, 932);
     context.save();
     roundRectPath(context, 92, top, tw + padX * 2, h, h / 2);
     context.fillStyle = 'rgba(142,124,195,0.26)';
@@ -121,7 +123,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   // 赛季数据：半透明玻璃卡
   if (input.showRefs !== false && input.refs.length) {
-    const visible = input.refs.slice(0, 2);
+    const visible = selectVisibleRefs(input.refs, rng, 2);
     for (const [i, ref] of visible.entries()) {
       const x = 92 + i * 464;
       const y = 1030;

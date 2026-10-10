@@ -39,7 +39,7 @@ const cases: CaseDef[] = [
 
 const LINES: Record<string, string> = {
   note: '打卡第 87 天，习惯已经长在身上啦，今天也稳稳完成！',
-  poster: '把胜利留在今天，把冠军写进赛季，冲呀！',
+  poster: '还记得无言关羽开大的那波绕后吗，19局78.9%的胜率不是白来的，每次想到那把刀落下来的瞬间都起鸡皮疙瘩',
   magazine: '今天也要按部就班地努力，稳稳地前进。',
   dusk: '低谷没关系，慢慢充电，星星会陪着我们。',
   dawn: '新的一天新的期待，阳光已经在路上了。',
@@ -58,6 +58,10 @@ const CAPTIONS: Record<string, string> = {
 const REFS = [
   { label: '本赛季胜率', value: '58.2%', source: 'kpl' },
   { label: '登场次数', value: '126', source: 'kpl' },
+  { label: '当前赛季 KDA', value: '4.8', source: 'kpl' },
+  { label: 'MVP 次数', value: '18', source: 'kpl' },
+  { label: '场均助攻', value: '8.2', source: 'kpl' },
+  { label: '常用英雄', value: '鲁班大师、苏烈、张飞', source: 'kpl' },
 ];
 
 const cards = ref<Record<string, RenderedCard | null>>({});
