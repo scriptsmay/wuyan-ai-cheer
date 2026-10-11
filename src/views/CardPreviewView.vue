@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
 import { renderCheerCard, type CardInput, type RenderedCard } from '../lib/card-renderer';
-import type { Checkin, Mood } from '../types';
+import { generateCheer } from '../lib/api';
+import type { Checkin, CheerRef, Mood } from '../types';
 
 /* 仅 dev 构建可用的模板预览页（路由在 router.ts 中按 import.meta.env.DEV 注册） */
 
@@ -55,7 +56,7 @@ const ALL_CASES: CaseDef[] = [
   },
 ];
 
-const LINES: Record<string, string> = {
+const DEFAULT_LINES: Record<string, string> = {
   note: '打卡第 87 天，习惯已经长在身上啦，今天也稳稳完成！',
   poster: '还记得无言关羽开大的那波绕后吗，19局78.9%的胜率不是白来的，每次想到那把刀落下来的瞬间都起鸡皮疙瘩',
   magazine: '今天也要按部就班地努力，稳稳地前进。',
@@ -81,14 +82,34 @@ const CAPTIONS: Record<string, string> = {
   clipping: '剪下来收藏',
 };
 
-const REFS = [
-  { label: '本赛季胜率', value: '58.2%', source: 'kpl' },
-  { label: '登场次数', value: '126', source: 'kpl' },
-  { label: '当前赛季 KDA', value: '4.8', source: 'kpl' },
-  { label: 'MVP 次数', value: '18', source: 'kpl' },
-  { label: '场均助攻', value: '8.2', source: 'kpl' },
-  { label: '常用英雄', value: '鲁班大师、苏烈、张飞', source: 'kpl' },
+// 真实的 KSG.无言 对抗路英雄池与战绩兜底
+const DEFAULT_REFS: CheerRef[] = [
+  { label: '当前赛季胜率', value: '100%', source: 'season_summaries' },
+  { label: '当前赛季 KDA', value: '9.38', source: 'season_summaries' },
+  { label: '当前赛季对局数', value: '9', source: 'season_summaries' },
+  { label: '当前赛季 MVP 次数', value: '2', source: 'season_summaries' },
+  { label: '当前赛季场均助攻', value: '5.78', source: 'season_summaries' },
+  {
+    label: '常用英雄（按出场数）',
+    value:
+      '夏洛特（32局，胜率68.8%）、狂铁（26局，胜率69.2%）、马超（22局，胜率45.5%）、关羽（19局，胜率78.9%）、司空震（17局，胜率41.2%）',
+    source: 'season_summaries',
+  },
 ];
+
+// 响应式数据源与控制
+const activeRefs = ref<CheerRef[]>([...DEFAULT_REFS]);
+const activeSnapshotAt = ref<string>('');
+const dataSourceStatus = ref<'default' | 'online_overview' | 'ai_generated'>('default');
+const dataSourceDetail = ref<string>('默认对抗路英雄池');
+
+// 线上 AI 生成状态
+const isGeneratingAi = ref(false);
+const isLoadingOverview = ref(false);
+const aiMood = ref<Mood>('daily');
+const aiLines = ref<string[]>([]);
+const aiCaption = ref<string>('');
+const selectedAiLineIndex = ref<number>(-1); // -1 轮流分配，>=0 统一样式
 
 const cards = ref<Record<string, RenderedCard | null>>({});
 const globalVariant = ref(0);
@@ -99,13 +120,23 @@ type PreviewAppearance = 'auto' | 'light' | 'dark';
 const APPEARANCES: PreviewAppearance[] = ['auto', 'light', 'dark'];
 const appearance = ref<PreviewAppearance>('auto');
 
-async function renderCase(c: CaseDef): Promise<void> {
+function getLineForCase(caseKey: string, index: number): string {
+  if (selectedAiLineIndex.value >= 0 && aiLines.value[selectedAiLineIndex.value]) {
+    return aiLines.value[selectedAiLineIndex.value] ?? '';
+  }
+  if (aiLines.value.length > 0) {
+    return aiLines.value[index % aiLines.value.length] ?? '';
+  }
+  return DEFAULT_LINES[caseKey] ?? '';
+}
+
+async function renderCase(c: CaseDef, index: number = 0): Promise<void> {
   try {
     cards.value[c.key] = await renderCheerCard({
-      line: LINES[c.key] ?? '',
-      emojiCaption: CAPTIONS[c.key] ?? '',
-      refs: REFS,
-      sourceSnapshotAt: '',
+      line: getLineForCase(c.key, index),
+      emojiCaption: aiCaption.value || CAPTIONS[c.key] || '',
+      refs: activeRefs.value,
+      sourceSnapshotAt: activeSnapshotAt.value,
       showQr: true,
       showRefs: true,
       mood: c.mood,
@@ -124,12 +155,13 @@ const only = new URLSearchParams(window.location.search).get('only');
 const cases = only ? ALL_CASES.filter((c) => c.key === only) : ALL_CASES;
 
 async function renderAll(): Promise<void> {
-  await Promise.all(cases.map((c) => renderCase(c)));
+  await Promise.all(cases.map((c, i) => renderCase(c, i)));
 }
 
 function reroll(c: CaseDef): void {
+  const idx = cases.findIndex((item) => item.key === c.key);
   variants.value[c.key] = (variants.value[c.key] ?? globalVariant.value) + 1;
-  renderCase(c);
+  renderCase(c, idx >= 0 ? idx : 0);
 }
 
 async function rerollAll(): Promise<void> {
@@ -138,18 +170,142 @@ async function rerollAll(): Promise<void> {
   await renderAll();
 }
 
+/** 拉取线上最新真实 KPL 概览数据 */
+async function fetchOnlineOverview(): Promise<boolean> {
+  isLoadingOverview.value = true;
+  try {
+    const res = await fetch('/api/overview');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    const ov = json.data?.overview;
+    if (!ov) throw new Error('无效的概览数据');
+    const cs = ov.current_season || {};
+    const heroTop = (ov.hero_top || []) as Array<{ hero_name: string; battles: number; win_rate: string }>;
+    const heroStr = heroTop
+      .slice(0, 5)
+      .map((h) => `${h.hero_name}（${h.battles}局，胜率${h.win_rate}）`)
+      .join('、');
+    const newRefs: CheerRef[] = [];
+    if (cs.kda_ratio) newRefs.push({ label: '当前赛季 KDA', value: String(cs.kda_ratio), source: 'season_summaries' });
+    if (cs.win_rate) newRefs.push({ label: '当前赛季胜率', value: String(cs.win_rate), source: 'season_summaries' });
+    if (cs.battles) newRefs.push({ label: '当前赛季对局数', value: String(cs.battles), source: 'season_summaries' });
+    if (cs.mvp) newRefs.push({ label: '当前赛季 MVP 次数', value: String(cs.mvp), source: 'season_summaries' });
+    if (cs.avg_assists)
+      newRefs.push({ label: '当前赛季场均助攻', value: String(cs.avg_assists), source: 'season_summaries' });
+    if (heroStr) newRefs.push({ label: '常用英雄（按出场数）', value: heroStr, source: 'season_summaries' });
+
+    activeRefs.value = newRefs;
+    activeSnapshotAt.value = json.data?.updated_at || '';
+    dataSourceStatus.value = 'online_overview';
+    dataSourceDetail.value = `线上 KPL 数据（${json.data?.season || '当前赛季'}）`;
+    return true;
+  } catch (err) {
+    console.warn('[preview] 获取线上概览失败，使用对抗路兜底数据', err);
+    return false;
+  } finally {
+    isLoadingOverview.value = false;
+  }
+}
+
+/** 触发线上 AI 真实生成接口 */
+async function triggerAiCheer(): Promise<void> {
+  isGeneratingAi.value = true;
+  try {
+    const reqId = crypto.randomUUID();
+    const result = await generateCheer(aiMood.value, '', reqId);
+    if (result && Array.isArray(result.lines) && result.lines.length > 0) {
+      aiLines.value = result.lines;
+      aiCaption.value = result.emoji_caption || '';
+      selectedAiLineIndex.value = -1;
+      if (Array.isArray(result.refs) && result.refs.length > 0) {
+        activeRefs.value = result.refs;
+      }
+      activeSnapshotAt.value = result.source_snapshot_at || '';
+      dataSourceStatus.value = 'ai_generated';
+      dataSourceDetail.value = `线上 AI 生成（${result.report_id.slice(0, 8)}…）`;
+      await renderAll();
+    }
+  } catch (err) {
+    console.error('[preview] 线上 AI 生成失败', err);
+    alert('线上 AI 生成调用失败，请查看控制台日志');
+  } finally {
+    isGeneratingAi.value = false;
+  }
+}
+
+/** 恢复默认对抗路兜底数据 */
+async function resetToDefault(): Promise<void> {
+  activeRefs.value = [...DEFAULT_REFS];
+  activeSnapshotAt.value = '';
+  aiLines.value = [];
+  aiCaption.value = '';
+  selectedAiLineIndex.value = -1;
+  dataSourceStatus.value = 'default';
+  dataSourceDetail.value = '默认对抗路英雄池';
+  await renderAll();
+}
+
+/** 切换选中的特定 AI 文案 */
+function selectAiLine(idx: number): void {
+  selectedAiLineIndex.value = idx;
+  renderAll();
+}
+
 watch(appearance, renderAll);
 
-onMounted(renderAll);
+onMounted(async () => {
+  // 页面进入时优先尝试联网拉取真实 KPL 数据
+  await fetchOnlineOverview();
+  await renderAll();
+});
 </script>
 
 <template>
   <section class="card-preview-page">
     <header class="preview-header">
-      <h1>卡片模板预览（仅 dev 构建）</h1>
+      <div class="header-title-box">
+        <h1>卡片模板预览（仅 dev 构建）</h1>
+        <div class="data-source-badge" :class="dataSourceStatus">
+          <span class="dot"></span>
+          <span>{{ dataSourceDetail }}</span>
+        </div>
+      </div>
+
       <div class="preview-controls">
+        <!-- 线上 AI 真实生成操作 -->
+        <div class="ai-group">
+          <select v-model="aiMood" class="mood-select" title="选择 AI 生成心情">
+            <option value="daily">日常 (daily)</option>
+            <option value="victory">胜利 (victory)</option>
+            <option value="low">低谷 (low)</option>
+            <option value="hope">期待 (hope)</option>
+          </select>
+          <button type="button" class="btn-action primary" :disabled="isGeneratingAi" @click="triggerAiCheer">
+            {{ isGeneratingAi ? '生成中…' : '✨ 线上 AI 实时生成' }}
+          </button>
+        </div>
+
+        <button
+          type="button"
+          class="btn-action"
+          :disabled="isLoadingOverview"
+          title="拉取线上 /api/overview 真实对局数据"
+          @click="
+            async () => {
+              await fetchOnlineOverview();
+              await renderAll();
+            }
+          "
+        >
+          {{ isLoadingOverview ? '同步中…' : '🔄 同步 KPL 赛事' }}
+        </button>
+
+        <button v-if="dataSourceStatus !== 'default'" type="button" class="btn-action reset" @click="resetToDefault">
+          重置
+        </button>
+
         <div class="seg" role="group" aria-label="明暗外观">
-          <span>明暗外观</span>
+          <span>外观</span>
           <div>
             <button
               v-for="opt in APPEARANCES"
@@ -162,9 +318,44 @@ onMounted(renderAll);
             </button>
           </div>
         </div>
-        <button type="button" class="reroll-all" @click="rerollAll">换一批（variant {{ globalVariant }}）</button>
+
+        <button type="button" class="btn-action reroll-all" @click="rerollAll">换一批 (v{{ globalVariant }})</button>
       </div>
     </header>
+
+    <!-- 线上 AI 生成的多条文案切换器 -->
+    <div v-if="aiLines.length > 0" class="ai-lines-panel">
+      <div class="panel-header">
+        <span class="caption-tag">{{ aiCaption || 'AI 生成' }}</span>
+        <span class="panel-hint">点击句子统一样式预览，或切回「轮流分配」：</span>
+      </div>
+      <div class="lines-chips">
+        <button type="button" class="chip" :class="{ active: selectedAiLineIndex === -1 }" @click="selectAiLine(-1)">
+          🔀 各卡片轮流分配
+        </button>
+        <button
+          v-for="(line, idx) in aiLines"
+          :key="idx"
+          type="button"
+          class="chip line-chip"
+          :class="{ active: selectedAiLineIndex === idx }"
+          :title="line"
+          @click="selectAiLine(idx)"
+        >
+          <span class="idx">{{ idx + 1 }}</span>
+          <span class="text">{{ line }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 当前卡片引用的战绩/赛事依据展示折叠条 -->
+    <div class="refs-preview-bar">
+      <span class="refs-title">卡片依据 (Refs)：</span>
+      <span v-for="(refItem, rIdx) in activeRefs" :key="rIdx" class="ref-badge">
+        <strong>{{ refItem.label }}:</strong> {{ refItem.value }}
+      </span>
+    </div>
+
     <div class="preview-grid" :class="{ single: cases.length === 1 }">
       <figure v-for="c in cases" :key="c.key">
         <figcaption>{{ c.label }}</figcaption>
@@ -187,20 +378,105 @@ onMounted(renderAll);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
-.preview-header h1 {
+.header-title-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.header-title-box h1 {
   font-size: 20px;
+  margin: 0;
+}
+.data-source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--line);
+}
+.data-source-badge .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+.data-source-badge.online_overview {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+.data-source-badge.online_overview .dot {
+  background: #10b981;
+}
+.data-source-badge.ai_generated {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: #8b5cf6;
+}
+.data-source-badge.ai_generated .dot {
+  background: #8b5cf6;
 }
 .preview-controls {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ai-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mood-select {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-card, var(--bg));
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
+.btn-action {
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-action:hover:not(:disabled) {
+  border-color: var(--text-muted);
+  background: rgba(125, 125, 125, 0.08);
+}
+.btn-action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.btn-action.primary {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #fff;
+  font-weight: 500;
+}
+.btn-action.primary:hover:not(:disabled) {
+  background: #4f46e5;
+}
+.btn-action.reset {
+  color: var(--text-dim);
 }
 .seg {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 .seg > span {
   font-size: 12px;
@@ -213,11 +489,11 @@ onMounted(renderAll);
   overflow: hidden;
 }
 .seg button {
-  padding: 7px 14px;
+  padding: 6px 12px;
   border: 0;
   background: transparent;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
 }
 .seg button + button {
@@ -227,13 +503,86 @@ onMounted(renderAll);
   background: var(--primary);
   color: var(--on-primary);
 }
-.reroll-all {
-  padding: 8px 18px;
+.ai-lines-panel {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: rgba(125, 125, 125, 0.05);
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: transparent;
+  border-radius: 10px;
+}
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.caption-tag {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8b5cf6;
+}
+.panel-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.lines-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
   color: var(--text);
+  font-size: 12px;
   cursor: pointer;
+  max-width: 320px;
+}
+.chip:hover {
+  border-color: var(--text-muted);
+}
+.chip.active {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #fff;
+}
+.chip .idx {
+  font-weight: 700;
+  opacity: 0.8;
+}
+.chip .text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.refs-preview-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 8px 12px;
+  background: rgba(125, 125, 125, 0.03);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.refs-title {
+  font-weight: 600;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.ref-badge {
+  padding: 2px 8px;
+  background: rgba(125, 125, 125, 0.06);
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 .preview-grid {
   display: grid;
