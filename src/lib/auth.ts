@@ -97,7 +97,7 @@ export async function getAuthSnapshot(): Promise<AuthSnapshot> {
  * 用户名密码登录 → POST /api/auth/login → 存储 JWT。
  */
 export async function signInWithPassword(username: string, password: string): Promise<void> {
-  const apiBase = import.meta.env.VITE_API_BASE_URL.replace(/\/$/u, '');
+  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/u, '');
   const resp = await fetch(`${apiBase}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

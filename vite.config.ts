@@ -21,6 +21,16 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    proxy: {
+      '/api': {
+        target: 'https://api-vercel.kplwuyan.site',
+        changeOrigin: true,
+        headers: {
+          Origin: 'https://cheer.kplwuyan.site',
+          Referer: 'https://cheer.kplwuyan.site/',
+        },
+      },
+    },
   },
   preview: {
     port: 4173,

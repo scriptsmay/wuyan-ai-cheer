@@ -3,7 +3,7 @@ import { getClientId } from './client-id';
 import { pairSseEvents } from './sse';
 import type { ApiErrorBody, AppConfig, CheerResult, CheckinResult, CheckinStats, Mood, MyCheckin } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.replace(/\/$/u, '');
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/u, '');
 const AUTH_TOKEN = import.meta.env.VITE_AUTH_TOKEN || '';
 
 export class ApiError extends Error {
