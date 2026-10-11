@@ -54,7 +54,6 @@ export const LIGHT_PRIMARY_WEIGHT = 0.55;
  */
 export const LIGHT_ALTERNATES: Record<Mood, readonly (readonly [TemplateId, number])[]> = {
   victory: [
-    ['vermillion', 0.4],
     ['poster', 0.3],
     ['clipping', 0.2],
     ['pulse', 0.1],
