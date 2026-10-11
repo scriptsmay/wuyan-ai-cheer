@@ -1,5 +1,6 @@
 import QRCode from 'qrcode';
 import type { Mood } from '../../types';
+import type { CardAppearance } from './selection';
 import type { CardTheme } from './types';
 import type { CardRng } from './rng';
 
@@ -22,6 +23,12 @@ export const FAMILY_MONO = '"JetBrains Mono", "Noto Sans SC", monospace';
 export const FAMILY_ENGLISH = '"Inter", "Noto Sans SC", sans-serif';
 export const FAMILY_WENKAI = '"LXGW WenKai Screen", "Noto Sans SC", sans-serif';
 
+/**
+ * 心情 → 强调色，分暗/亮两套。
+ * DARK 沿用旧值（在深底上做过可读性微调，如 low 的紫提到 #B49BE8）；
+ * LIGHT 与 tokens.css 的 [data-theme='light'] 情绪变量同源——霓虹青 #00D4FF 落在
+ * 米白卡上对比度不足，亮色卡片必须换沉稳色，否则 pulse 这类强调色驱动的版式会糊。
+ */
 export const MOOD_THEME: Record<Mood, CardTheme> = {
   daily: {
     primary: '#00D4FF',
@@ -49,8 +56,36 @@ export const MOOD_THEME: Record<Mood, CardTheme> = {
   },
 };
 
-export function resolveTheme(mood?: Mood): CardTheme {
-  return (mood && MOOD_THEME[mood]) || MOOD_THEME.daily;
+export const MOOD_THEME_LIGHT: Record<Mood, CardTheme> = {
+  daily: {
+    primary: '#007FA6',
+    primaryRgb: '0,127,166',
+    secondary: '#D9761F',
+    onAccent: '#FFF7EF',
+  },
+  victory: {
+    primary: '#A9760F',
+    primaryRgb: '169,118,15',
+    secondary: '#D9761F',
+    onAccent: '#FFF8E8',
+  },
+  hope: {
+    primary: '#E0464B',
+    primaryRgb: '224,70,75',
+    secondary: '#E08A3C',
+    onAccent: '#FFF4F2',
+  },
+  low: {
+    primary: '#6B4AA0',
+    primaryRgb: '107,74,160',
+    secondary: '#2F8E74',
+    onAccent: '#F7F3FF',
+  },
+};
+
+export function resolveTheme(mood?: Mood, appearance: CardAppearance = 'dark'): CardTheme {
+  const palette = appearance === 'light' ? MOOD_THEME_LIGHT : MOOD_THEME;
+  return palette[mood ?? 'daily'] ?? palette.daily;
 }
 
 /* ------------------------------------------------------------------ */

@@ -1,49 +1,107 @@
 import { describe, expect, it } from 'vitest';
 import { createRng } from '../src/lib/card/rng';
-import { MOOD_PRIMARY, buildSeed, resolveTemplateId, selectVisibleRefs } from '../src/lib/card/selection';
+import {
+  LIGHT_ALTERNATES,
+  LIGHT_PRIMARY,
+  MOOD_PRIMARY,
+  SIGNAL_FALLBACK_WEIGHT,
+  buildSeed,
+  resolveTemplateId,
+  selectVisibleRefs,
+} from '../src/lib/card/selection';
 import { TEMPLATES } from '../src/lib/card/templates';
 import type { CheerRef } from '../src/types';
 
 const DATE = '2026-10-06';
 const MOODS = ['victory', 'daily', 'low', 'hope'] as const;
+const DARK_ONLY: string[] = ['signal', 'dusk'];
+
+function pick(mood: (typeof MOODS)[number], variant: number, appearance?: 'light' | 'dark') {
+  return resolveTemplateId({ hasCheckin: false, mood, variant, dateLabel: DATE, appearance });
+}
 
 describe('card template selection', () => {
   it('always picks the note template for checkin cards', () => {
-    for (const variant of [0, 1, 7, 42]) {
-      for (const mood of MOODS) {
-        expect(resolveTemplateId({ hasCheckin: true, mood, variant, dateLabel: DATE })).toBe('note');
+    for (const appearance of ['light', 'dark'] as const) {
+      for (const variant of [0, 1, 7, 42]) {
+        for (const mood of MOODS) {
+          const id = resolveTemplateId({ hasCheckin: true, mood, variant, dateLabel: DATE, appearance });
+          expect(id).toBe('note');
+        }
       }
     }
   });
 
-  it('maps each mood to its primary family for most variants and keeps signal as a rare fallback', () => {
+  it('dark appearance keeps the legacy behaviour: mood primary plus rare signal fallback', () => {
     for (const mood of MOODS) {
-      const ids = Array.from({ length: 200 }, (_, variant) =>
-        resolveTemplateId({ hasCheckin: false, mood, variant, dateLabel: DATE })
-      );
+      const ids = Array.from({ length: 200 }, (_, variant) => pick(mood, variant, 'dark'));
       const primaryCount = ids.filter((id) => id === MOOD_PRIMARY[mood]).length;
       expect(primaryCount).toBeGreaterThan(120); // 名义权重 0.8
       expect(ids).toContain('signal');
       expect(primaryCount).toBeLessThan(200);
+      // 深色主题下不投放亮色专属模板
+      for (const id of ids) {
+        expect(['pulse', 'blueprint', 'mist', 'clipping']).not.toContain(id);
+      }
     }
   });
 
+  it('light appearance never yields the dark-only templates', () => {
+    for (const mood of MOODS) {
+      const ids = Array.from({ length: 400 }, (_, variant) => pick(mood, variant, 'light'));
+      for (const id of ids) {
+        expect(DARK_ONLY).not.toContain(id);
+      }
+    }
+  });
+
+  it('light appearance favours the mood primary but still rotates the alternates', () => {
+    for (const mood of MOODS) {
+      const ids = Array.from({ length: 400 }, (_, variant) => pick(mood, variant, 'light'));
+      const primaryCount = ids.filter((id) => id === LIGHT_PRIMARY[mood]).length;
+      expect(primaryCount).toBeGreaterThan(160); // 名义权重 0.55 → 期望 220
+      expect(primaryCount).toBeLessThan(280);
+      for (const [alt] of LIGHT_ALTERNATES[mood]) expect(ids).toContain(alt);
+      // 备选池本身不得含深色模板
+      for (const [alt] of LIGHT_ALTERNATES[mood]) expect(DARK_ONLY).not.toContain(alt);
+    }
+  });
+
+  it('gives the low mood a light companion template instead of the night sky', () => {
+    expect(LIGHT_PRIMARY.low).toBe('mist');
+    const ids = Array.from({ length: 200 }, (_, variant) => pick('low', variant, 'light'));
+    expect(ids).not.toContain('dusk');
+    expect(ids.filter((id) => id === 'mist').length).toBeGreaterThan(60);
+  });
+
+  it('omitting appearance falls back to the dark pool (legacy semantics)', () => {
+    const ids = Array.from({ length: 200 }, (_, variant) => pick('daily', variant));
+    for (const id of ids) expect(['magazine', 'signal']).toContain(id);
+  });
+
   it('is deterministic for identical inputs', () => {
-    const a = resolveTemplateId({ hasCheckin: false, mood: 'hope', variant: 3, dateLabel: DATE });
-    const b = resolveTemplateId({ hasCheckin: false, mood: 'hope', variant: 3, dateLabel: DATE });
+    const a = resolveTemplateId({ hasCheckin: false, mood: 'hope', variant: 3, dateLabel: DATE, appearance: 'light' });
+    const b = resolveTemplateId({ hasCheckin: false, mood: 'hope', variant: 3, dateLabel: DATE, appearance: 'light' });
     expect(a).toBe(b);
   });
 
   it('falls back to daily for unknown moods', () => {
-    const ids = Array.from({ length: 50 }, (_, variant) =>
-      resolveTemplateId({ hasCheckin: false, mood: 'nope' as never, variant, dateLabel: DATE })
+    const ids = Array.from({ length: 60 }, (_, variant) =>
+      resolveTemplateId({ hasCheckin: false, mood: 'nope' as never, variant, dateLabel: DATE, appearance: 'dark' })
     );
     for (const id of ids) expect(['magazine', 'signal']).toContain(id);
   });
 
-  it('builds seed from date / kind / mood / variant', () => {
+  it('builds seed from date / kind / mood / variant only (theme does not reshuffle decorations)', () => {
     expect(buildSeed({ hasCheckin: true, mood: 'daily', variant: 2, dateLabel: DATE })).toBe(`${DATE}|checkin|daily|2`);
     expect(buildSeed({ hasCheckin: false, variant: 0, dateLabel: DATE })).toBe(`${DATE}|cheer|daily|0`);
+    expect(buildSeed({ hasCheckin: false, variant: 0, dateLabel: DATE, appearance: 'light' })).toBe(
+      buildSeed({ hasCheckin: false, variant: 0, dateLabel: DATE, appearance: 'dark' })
+    );
+  });
+
+  it('keeps the documented signal fallback weight', () => {
+    expect(SIGNAL_FALLBACK_WEIGHT).toBe(0.2);
   });
 });
 
@@ -153,11 +211,37 @@ describe('selectVisibleRefs', () => {
 });
 
 describe('template registry', () => {
-  it('exposes all six templates with draw functions', () => {
-    for (const id of ['note', 'poster', 'magazine', 'dusk', 'dawn', 'signal'] as const) {
+  const ALL_IDS = [
+    'note',
+    'poster',
+    'magazine',
+    'dusk',
+    'dawn',
+    'signal',
+    'pulse',
+    'blueprint',
+    'mist',
+    'clipping',
+  ] as const;
+
+  it('exposes all ten templates with draw functions', () => {
+    for (const id of ALL_IDS) {
       expect(TEMPLATES[id]).toBeDefined();
       expect(typeof TEMPLATES[id].draw).toBe('function');
       expect(TEMPLATES[id].name).toBeTruthy();
     }
+  });
+
+  it('registers exactly the templates the selection tables can name', () => {
+    const reachable = new Set<string>([
+      ...Object.values(MOOD_PRIMARY),
+      ...Object.values(LIGHT_PRIMARY),
+      'note',
+      'signal',
+    ]);
+    for (const alts of Object.values(LIGHT_ALTERNATES)) {
+      for (const [id] of alts) reachable.add(id);
+    }
+    expect([...reachable].sort()).toEqual([...ALL_IDS].sort());
   });
 });

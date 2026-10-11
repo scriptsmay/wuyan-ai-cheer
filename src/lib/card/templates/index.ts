@@ -6,6 +6,10 @@ import { magazineTemplate } from './magazine';
 import { duskTemplate } from './dusk';
 import { dawnTemplate } from './dawn';
 import { signalTemplate } from './signal';
+import { pulseTemplate } from './pulse';
+import { blueprintTemplate } from './blueprint';
+import { mistTemplate } from './mist';
+import { clippingTemplate } from './clipping';
 
 export const TEMPLATES: Record<TemplateId, CardTemplate> = {
   note: noteTemplate,
@@ -14,4 +18,8 @@ export const TEMPLATES: Record<TemplateId, CardTemplate> = {
   dusk: duskTemplate,
   dawn: dawnTemplate,
   signal: signalTemplate,
+  pulse: pulseTemplate,
+  blueprint: blueprintTemplate,
+  mist: mistTemplate,
+  clipping: clippingTemplate,
 };

@@ -14,7 +14,6 @@ import {
   drawText,
   formatDate,
   roundRectPath,
-  wrapText,
 } from '../shared';
 
 const FONT_TITLE_HEADER = `400 70px ${FAMILY_TITLE}`;
@@ -62,7 +61,7 @@ function drawBackground(ctx: TemplateContext): void {
 }
 
 async function drawStreakBadge(ctx: TemplateContext): Promise<void> {
-  const { ctx: context, theme, input, rng } = ctx;
+  const { ctx: context, theme, input } = ctx;
   const cx = 885;
   const cy = 230;
   const R = 110;

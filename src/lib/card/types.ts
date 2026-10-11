@@ -1,10 +1,11 @@
 import type { CheerRef, Checkin, Mood } from '../../types';
 import type { CardRng } from './rng';
-import type { TemplateId } from './selection';
+import type { CardAppearance, TemplateId } from './selection';
 /**
  * 心情主题色：不同 mood 切换主强调色 primary 与辅色 secondary。
- * 与 web UI 的 mood tokens（tokens.css）保持一致；深色模板（signal）上做过
- * 可读性微调（例如 low 的紫色提亮到 #B49BE8）。浅色模板可自行派生印刷友好色。
+ * 暗色取值与 web UI 的 mood tokens（tokens.css :root）保持一致，并在深色模板
+ * （signal）上做过可读性微调（例如 low 的紫色提亮到 #B49BE8）；亮色取值另有一套
+ * （MOOD_THEME_LIGHT，见 shared.ts），两套都由 resolveTheme(mood, appearance) 派发。
  * onAccent 用于 pill 等实色块上的文字色。
  */
 export interface CardTheme {
@@ -28,6 +29,8 @@ export interface CardInput {
   variant?: number;
   // 强制指定模板（dev 预览页用；生产 UI 不传，走种子选择）
   templateId?: TemplateId;
+  // 明暗外观：缺省从 <html data-theme> 读取，预览页/单测可显式覆盖
+  appearance?: CardAppearance;
 }
 
 export interface RenderedCard {

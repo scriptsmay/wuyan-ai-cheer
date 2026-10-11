@@ -1,8 +1,16 @@
 import { createRng } from './rng';
-import { buildSeed, resolveTemplateId } from './selection';
+import { buildSeed, resolveTemplateId, type CardAppearance } from './selection';
 import { CARD_HEIGHT, CARD_WIDTH, formatDate, resolveTheme } from './shared';
 import { TEMPLATES } from './templates';
 import type { CardInput, RenderedCard, TemplateContext } from './types';
+
+/** 站内主题由 applyTheme() 写入 <html data-theme>，卡片跟随它选池与配色。 */
+function resolveAppearance(input: CardInput): CardAppearance {
+  if (input.appearance) return input.appearance;
+  if (typeof document === 'undefined') return 'dark';
+  const attr = document.documentElement.dataset.theme;
+  return attr === 'light' ? 'light' : 'dark';
+}
 
 export async function renderCheerCard(input: CardInput): Promise<RenderedCard> {
   await document.fonts.ready;
@@ -12,13 +20,20 @@ export async function renderCheerCard(input: CardInput): Promise<RenderedCard> {
   const context = canvas.getContext('2d');
   if (!context) throw new Error('当前浏览器不支持 Canvas 导出');
 
+  const appearance = resolveAppearance(input);
   const dateLabel = input.checkin?.date ?? formatDate(new Date());
-  const selection = { hasCheckin: !!input.checkin, mood: input.mood, variant: input.variant, dateLabel };
+  const selection = {
+    hasCheckin: !!input.checkin,
+    mood: input.mood,
+    variant: input.variant,
+    appearance,
+    dateLabel,
+  };
   const templateId = input.templateId && TEMPLATES[input.templateId] ? input.templateId : resolveTemplateId(selection);
   const template = TEMPLATES[templateId];
   if (!template) throw new Error(`未知卡片模板：${templateId}`);
 
-  const theme = resolveTheme(input.mood);
+  const theme = resolveTheme(input.mood, appearance);
   const rng = createRng(`${buildSeed(selection)}|${templateId}`);
   const templateContext: TemplateContext = { ctx: context, input, rng, theme, dateLabel };
 
