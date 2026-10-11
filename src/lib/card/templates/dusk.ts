@@ -1,10 +1,11 @@
 import type { CardTemplate, TemplateContext } from '../types';
-import { selectVisibleRefs } from '../selection';
+import { heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   FAMILY_WENKAI,
   buildQrImage,
   drawBlobs,
   drawGrain,
+  drawHeroChips,
   drawQrFramed,
   drawStars,
   drawText,
@@ -139,12 +140,31 @@ async function draw(ctx: TemplateContext): Promise<void> {
       context.restore();
       await drawText(
         context,
-        ref.label,
+        ref.hero ? heroEyebrowOf(ref) : ref.label,
         x + 34,
         y + 52,
         `400 24px "Noto Sans SC", sans-serif`,
         'rgba(220,210,245,0.55)'
       );
+      if (ref.hero) {
+        await drawHeroChips(
+          context,
+          ref.hero,
+          { x: x + 34, y: y + 68, w: w - 68, h: 68 },
+          {
+            nameSize: 32,
+            metaSize: 22,
+            nameColor: '#C9B8F0',
+            metaColor: 'rgba(220,210,245,0.62)',
+            nameFill: 'rgba(180,155,232,0.16)',
+            metaFill: 'rgba(255,255,255,0.07)',
+            stroke: 'rgba(255,255,255,0.16)',
+            highColor: '#7FD8B0',
+            nameFamily: FAMILY_WENKAI,
+          }
+        );
+        continue;
+      }
       const valueFont = `700 46px "JetBrains Mono", "Noto Sans SC", monospace`;
       context.font = valueFont;
       await document.fonts.load(valueFont, ref.value);

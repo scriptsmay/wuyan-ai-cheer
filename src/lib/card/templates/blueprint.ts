@@ -1,5 +1,6 @@
+import type { CheerRef } from '../../../types';
 import type { CardTemplate, TemplateContext } from '../types';
-import { selectVisibleRefs } from '../selection';
+import { heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   CARD_HEIGHT,
   CARD_WIDTH,
@@ -8,6 +9,7 @@ import {
   FAMILY_SUBTITLE,
   buildQrImage,
   dayOfYear,
+  drawHeroChips,
   drawQrFramed,
   drawRuns,
   drawText,
@@ -179,7 +181,7 @@ function leader(ctx: CanvasRenderingContext2D, x: number, y: number, label: stri
   ctx.restore();
 }
 
-function drawSpecTable(ctx: CanvasRenderingContext2D, refs: { label: string; value: string }[], accent: string): void {
+async function drawSpecTable(ctx: CanvasRenderingContext2D, refs: CheerRef[], accent: string): Promise<void> {
   const x = 96;
   const w = 640;
   const y = 1032;
@@ -194,7 +196,7 @@ function drawSpecTable(ctx: CanvasRenderingContext2D, refs: { label: string; val
   ctx.fillText('SEASON SPEC', x + 16, y - 16);
   ctx.restore();
 
-  refs.forEach((ref, i) => {
+  for (const [i, ref] of refs.entries()) {
     const rowY = y + i * 46;
     ctx.save();
     ctx.strokeStyle = 'rgba(11,33,48,0.18)';
@@ -205,13 +207,37 @@ function drawSpecTable(ctx: CanvasRenderingContext2D, refs: { label: string; val
     ctx.stroke();
     ctx.font = `400 22px ${FAMILY_BODY}`;
     ctx.fillStyle = MUTED;
-    ctx.fillText(ref.label, x + 16, rowY + 30);
+    ctx.fillText(ref.hero ? heroEyebrowOf(ref) : ref.label, x + 16, rowY + 30);
+    ctx.restore();
+    if (ref.hero) {
+      // 胶囊右对齐到数值列边界，与其余行的等宽数字同一基线
+      await drawHeroChips(
+        ctx,
+        ref.hero,
+        { x: x + w - 16, y: rowY + 2, w: 400, h: 42 },
+        {
+          nameSize: 24,
+          metaSize: 18,
+          align: 'right',
+          nameColor: i === 0 ? accent : INK,
+          metaColor: DIM,
+          nameFill: 'rgba(11,33,48,0.08)',
+          metaFill: 'rgba(11,33,48,0.04)',
+          stroke: 'rgba(11,33,48,0.28)',
+          highColor: '#1F7A5C',
+          nameFamily: FAMILY_SUBTITLE,
+          radiusRatio: 0.2,
+        }
+      );
+      continue;
+    }
+    ctx.save();
     ctx.font = `700 30px ${FAMILY_MONO}`;
     ctx.fillStyle = i === 0 ? accent : INK;
     ctx.textAlign = 'right';
     ctx.fillText(ref.value, x + w - 16, rowY + 32);
     ctx.restore();
-  });
+  }
 }
 
 async function draw(ctx: TemplateContext): Promise<void> {
@@ -275,7 +301,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   // 规格表
   if (input.showRefs !== false && input.refs.length) {
-    drawSpecTable(context, selectVisibleRefs(input.refs, rng, 2, 12), theme.primary);
+    await drawSpecTable(context, selectVisibleRefs(input.refs, rng, 2, 12), theme.primary);
   } else {
     dimensionH(context, 96, 736, 1060, 'AWAITING TELEMETRY');
   }

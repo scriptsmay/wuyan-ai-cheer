@@ -1,11 +1,12 @@
 import type { CardTemplate, TemplateContext } from '../types';
-import { selectVisibleRefs } from '../selection';
+import { heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   FAMILY_TITLE,
   FAMILY_WENKAI,
   buildQrImage,
   dayOfYear,
   drawGrain,
+  drawHeroChips,
   drawHighlighter,
   drawQrFramed,
   drawRuns,
@@ -219,7 +220,28 @@ async function draw(ctx: TemplateContext): Promise<void> {
     const visible = selectVisibleRefs(input.refs, rng, 2);
     for (const [i, ref] of visible.entries()) {
       const rowY = listTop + 46 + i * 78;
-      await drawText(context, ref.label, 104, rowY, `400 32px ${FAMILY_WENKAI}`, INK);
+      await drawText(context, ref.hero ? heroEyebrowOf(ref) : ref.label, 104, rowY, `400 32px ${FAMILY_WENKAI}`, INK);
+      if (ref.hero) {
+        await drawHeroChips(
+          context,
+          ref.hero,
+          { x: 690, y: rowY - 46, w: 540, h: 58 },
+          {
+            nameSize: 28,
+            metaSize: 20,
+            align: 'right',
+            nameColor: RED_PEN,
+            metaColor: INK_SOFT,
+            nameFill: 'rgba(225,91,78,0.10)',
+            metaFill: 'rgba(90,80,60,0.06)',
+            stroke: 'rgba(90,80,60,0.3)',
+            highColor: '#1F7A5C',
+            nameFamily: FAMILY_WENKAI,
+            radiusRatio: 0.3,
+          }
+        );
+        continue;
+      }
       const valueFont = `700 40px "JetBrains Mono", "Noto Sans SC", monospace`;
       context.font = valueFont;
       await document.fonts.load(valueFont, ref.value);

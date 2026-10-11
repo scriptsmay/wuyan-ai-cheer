@@ -1,4 +1,4 @@
-import type { Mood, CheerRef } from '../../types';
+import type { Mood, CheerRef, HeroStat } from '../../types';
 import { createRng, hashString, type CardRng } from './rng';
 
 export type TemplateId =
@@ -107,38 +107,71 @@ export function selectionHash(value: string): number {
 }
 
 /**
- * 把「常用英雄」这类合并字段拆成可独立参与抽取的条目。
+ * 把「常用英雄」这类合并字段拆成可独立参与抽取的条目，并保留括号里的战绩。
  *
  * 后端把出场前 5 的英雄拼成一条 value（线上实测 81 字，如
  * 「夏洛特（32局，胜率68.8%）、狂铁（26局，胜率69.2%）、…」）。该值远超
  * maxValueLength，会被 selectVisibleRefs 整体滤掉，卡片上永远看不到英雄数据。
  *
- * 这里按顿号拆成单英雄并剥掉括号详情（只剩「夏洛特」2-3 字），使每个英雄
- * 成为一个独立候选：既消掉了超长字段，又让「取到英雄」变成一件有随机性的事
- * —— 同一天不同 seed 会抽到不同英雄，而不是永远固定前 5 个。
+ * 按顿号拆成单英雄后，`（32局，胜率68.8%）`不再被剥掉丢弃，而是解析进
+ * `hero` 字段：value 只剩「夏洛特」这种短词（英雄因此能进候选池、并按 seed
+ * 轮换），完整的局数与胜率交给卡片的英雄胶囊区渲染。
  */
-function expandHeroRefs(refs: readonly CheerRef[]): CheerRef[] {
+
+/** `夏洛特（32局，胜率68.8%）` → 名字 + 括号内详情 */
+const HERO_DETAIL = /^(?<name>[^（）()]+?)\s*[（(](?<body>[^（）)]*)[）)]\s*$/;
+
+function parseHeroPart(part: string): HeroStat | null {
+  const trimmed = part.trim();
+  if (!trimmed) return null;
+  const matched = HERO_DETAIL.exec(trimmed);
+  if (!matched) {
+    // 无括号详情也算合法英雄（后端可能只给名字），但纯符号串不行
+    return /^[^（）()、，,.\s]+$/.test(trimmed) ? { name: trimmed } : null;
+  }
+  const name = matched.groups?.name?.trim();
+  const body = matched.groups?.body ?? '';
+  if (!name) return null;
+  const games = /(\d+)\s*局/.exec(body)?.[1];
+  const winRate = /(\d+(?:\.\d+)?)\s*%/.exec(body)?.[1];
+  const hero: HeroStat = { name };
+  if (games) hero.games = Number(games);
+  if (winRate) hero.winRate = Number(winRate);
+  return hero;
+}
+
+/** 括号被顿号劈开（如「英雄池（T0、T1）」）时不做拆分，交给长度过滤兜底 */
+function hasUnbalancedParen(part: string): boolean {
+  const open = (part.match(/[（(]/g) ?? []).length;
+  const close = (part.match(/[）)]/g) ?? []).length;
+  return open !== close;
+}
+
+function splitHeroRefs(refs: readonly CheerRef[]): CheerRef[] {
   const out: CheerRef[] = [];
   for (const ref of refs) {
-    const parts = ref.value.includes('、') ? ref.value.split('、') : [];
-    const bare = parts
-      .map((part) => part.trim().replace(/（[^）]*）\s*$/, '').trim())
-      .filter((name) => name.length > 0);
-    // 拆不出干净的英雄名（无顿号、或剥完不成词）就保持原样，交给长度过滤兜底
-    if (bare.length < 2) {
+    const parts = ref.value.split('、');
+    const heroes = parts.some(hasUnbalancedParen)
+      ? []
+      : parts.map(parseHeroPart).filter((hero): hero is HeroStat => hero !== null);
+    // 拆不出干净的英雄名（无顿号、或剥完不成词）就保持原样
+    if (heroes.length < 2) {
       out.push(ref);
       continue;
     }
-    // label 带上英雄名：否则多条候选同名，页面渲染 key 与「抽出的两项不同」判重都会撞
-    for (const name of bare) out.push({ ...ref, label: `${ref.label}·${name}`, value: name });
+    // label 保持原样：同一来源的多条候选共享 label，pickDistinct 的分组去重
+    // 才能挡住「两个英雄同时上卡」
+    for (const hero of heroes) out.push({ ...ref, value: hero.name, hero });
   }
   return out;
 }
 
-/** 拆分条目的 label 形如「常用英雄（按出场数）·夏洛特」，取中点前一段作为来源分组键。 */
-function groupKeyOf(ref: CheerRef): string {
-  const idx = ref.label.indexOf('·');
-  return idx === -1 ? ref.label : ref.label.slice(0, idx);
+/**
+ * 英雄条目的抬头文案：去掉「（按出场数）」这类括号补充，只留「常用英雄」，
+ * 让标题行短到能塞进窄槽；局数与胜率走英雄区自己的胶囊文案。
+ */
+export function heroEyebrowOf(ref: CheerRef): string {
+  return ref.label.replace(/[（(][^）)]*[）)]/g, '').trim() || ref.label;
 }
 
 /**
@@ -164,14 +197,23 @@ function pickDistinct<T>(pool: readonly T[], count: number, rng: CardRng | undef
 }
 
 /**
+ * 场次统计不上卡：应援卡要的是「多强」，不是「打了多少把」（赛季对局数往往只有个位数，
+ * 出现在卡面上反而泄气）。只匹配 label，英雄条目的 label 常带「（按出场数）」，不受影响。
+ */
+const HIDDEN_METRIC_LABEL = /对局数|总局数|场次/;
+
+/**
  * 从可用 refs 池中确定性选取展示项（支持 PRNG 轮换）
  * 规则：
- * 1. 条目数量 <= count 时直接返回；
+ * 0. 先剔除场次类条目（见 HIDDEN_METRIC_LABEL）；
+ * 1. 条目数量 <= count 时按 label 去重后原序返回（同批英雄拆出的多条共享 label，
+ *    不去重会让同一个英雄占满两栏）；
  * 2. 数量 > count 时：
- *    - 「常用英雄」等合并字段先拆成单英雄条目（见 expandHeroRefs）；
+ *    - 「常用英雄」等合并字段先拆成单英雄条目（见 splitHeroRefs）；
  *    - 过滤出适合双列窄卡排版的指标（默认 value 长度 <= 10），避免超长文案爆框；
+ *      英雄条目拆分后 value 只剩英雄名，天然通过此过滤；
  *    - 若过滤后候选项不足 count，回落使用全部条目；
- *    - 按来源分组去重后随机抽样，保证同 seed 稳定、不重复、且不出现同类两条。
+ *    - 按 label 分组去重后随机抽样，保证同 seed 稳定、不重复、且一次只上一个英雄。
  */
 export function selectVisibleRefs(
   refs: readonly CheerRef[] | undefined,
@@ -180,11 +222,12 @@ export function selectVisibleRefs(
   maxValueLength = 10
 ): CheerRef[] {
   if (!refs || refs.length === 0) return [];
-  const expanded = expandHeroRefs(refs);
-  if (expanded.length <= count) return [...expanded];
+  const usable = refs.filter((ref) => !HIDDEN_METRIC_LABEL.test(ref.label));
+  const expanded = splitHeroRefs(usable);
+  if (expanded.length <= count) return pickDistinct(expanded, count, undefined, (ref) => ref.label);
 
   const candidatePool = expanded.filter((r) => r.value.length <= maxValueLength);
   const pool = candidatePool.length >= count ? candidatePool : [...expanded];
 
-  return pickDistinct(pool, count, rng, groupKeyOf);
+  return pickDistinct(pool, count, rng, (ref) => ref.label);
 }

@@ -1,5 +1,5 @@
 import type { CardTemplate, TemplateContext } from '../types';
-import { selectVisibleRefs } from '../selection';
+import { heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   CARD_HEIGHT,
   CARD_WIDTH,
@@ -9,6 +9,7 @@ import {
   dayOfYear,
   drawGrain,
   drawHalftone,
+  drawHeroChips,
   drawQrFramed,
   drawRuns,
   drawText,
@@ -172,7 +173,33 @@ async function draw(ctx: TemplateContext): Promise<void> {
       context.fill();
       context.restore();
       dashedChip(context, x, y, w, h, i === 0 ? ink : 'rgba(38,34,28,0.4)');
-      await drawText(context, ref.label, x + 28, y + 54, `400 24px ${FAMILY_BODY}`, SOFT);
+      await drawText(
+        context,
+        ref.hero ? heroEyebrowOf(ref) : ref.label,
+        x + 28,
+        y + 54,
+        `400 24px ${FAMILY_BODY}`,
+        SOFT
+      );
+      if (ref.hero) {
+        await drawHeroChips(
+          context,
+          ref.hero,
+          { x: x + 28, y: y + 68, w: w - 56, h: 64 },
+          {
+            nameSize: 30,
+            metaSize: 21,
+            nameColor: i === 0 ? ink : INK,
+            metaColor: SOFT,
+            nameFill: `rgba(${toRgb(theme.secondary)},0.18)`,
+            metaFill: 'rgba(38,34,28,0.06)',
+            stroke: 'rgba(38,34,28,0.3)',
+            highColor: '#1F7A5C',
+            radiusRatio: 0.18,
+          }
+        );
+        continue;
+      }
       const valueFont = `700 52px "JetBrains Mono", "Noto Sans SC", monospace`;
       context.font = valueFont;
       await document.fonts.load(valueFont, ref.value);

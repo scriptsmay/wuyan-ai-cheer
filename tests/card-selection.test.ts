@@ -6,6 +6,7 @@ import {
   MOOD_PRIMARY,
   SIGNAL_FALLBACK_WEIGHT,
   buildSeed,
+  heroEyebrowOf,
   resolveTemplateId,
   selectVisibleRefs,
 } from '../src/lib/card/selection';
@@ -146,7 +147,12 @@ describe('selectVisibleRefs', () => {
     { label: '对局数', value: '412', source: 'kpl' },
     { label: 'MVP 次数', value: '18', source: 'kpl' },
     { label: '场均助攻', value: '8.2', source: 'kpl' },
-    { label: '常用英雄', value: '鲁班大师、苏烈、张飞、牛魔、盾山', source: 'kpl' },
+    {
+      label: '常用英雄',
+      value:
+        '夏洛特（32局，胜率68.8%）、狂铁（26局，胜率69.2%）、马超（21局，胜率55.6%）、关羽（18局，胜率47.8%）、司空震（12局，胜率62.5%）',
+      source: 'kpl',
+    },
   ];
 
   it('returns empty array when input is undefined or empty', () => {
@@ -167,12 +173,15 @@ describe('selectVisibleRefs', () => {
     expect(res[1]?.label).toBe('胜率');
   });
 
-  it('filters out overly long values when enough short items exist', () => {
+  it('never surfaces the merged hero blob, only a single parsed hero', () => {
     const rng = createRng('long-filter-test');
     for (let i = 0; i < 50; i++) {
       const res = selectVisibleRefs(mockRefs, rng, 2, 10);
       expect(res).toHaveLength(2);
-      expect(res.map((r) => r.label)).not.toContain('常用英雄');
+      for (const ref of res) {
+        expect(ref.value).not.toContain('、');
+        expect(ref.value).not.toContain('（');
+      }
     }
   });
 
@@ -205,8 +214,99 @@ describe('selectVisibleRefs', () => {
       expect(res[0]?.label).not.toBe(res[1]?.label);
       for (const item of res) seenLabels.add(item.label);
     }
-    // 应该覆盖到除了长文本以外的多种指标（KDA, 胜率, 对局数, MVP 次数, 场均助攻）
+    // 应该覆盖到多种指标（KDA, 胜率, MVP 次数, 场均助攻）与英雄条目
     expect(seenLabels.size).toBeGreaterThanOrEqual(4);
+    expect(seenLabels.has('对局数')).toBe(false);
+  });
+
+  it('never puts a match-count metric on the card', () => {
+    const counting: CheerRef[] = [
+      { label: '当前赛季对局数', value: '9', source: 'season_summaries' },
+      { label: '巅峰赛总场次', value: '128', source: 'kpl' },
+      {
+        label: '常用英雄（按出场数）',
+        value: '狂铁（26局，胜率69.2%）、关羽（19局，胜率78.9%）',
+        source: 'season_summaries',
+      },
+      { label: '当前赛季 KDA', value: '9.38', source: 'season_summaries' },
+    ];
+    for (const rng of [createRng('a'), createRng('b'), undefined]) {
+      for (const ref of selectVisibleRefs(counting, rng, 2)) {
+        expect(ref.label).not.toMatch(/对局数|场次/);
+      }
+    }
+    // 「按出场数」是英雄条目的 label 后缀，不该被场次规则误伤
+    expect(selectVisibleRefs(counting, undefined, 2).some((r) => r.hero?.name === '狂铁')).toBe(true);
+  });
+
+  it('rotates hero names across seeds and never picks two at once', () => {
+    const seen = new Set<string>();
+    for (let variant = 0; variant < 40; variant++) {
+      const rng = createRng(`2026-10-10|cheer|daily|${variant}|dawn`);
+      const res = selectVisibleRefs(mockRefs, rng, 2);
+      expect(res.filter((r) => r.label === '常用英雄').length).toBeLessThanOrEqual(1);
+      for (const item of res) if (item.hero) seen.add(item.hero.name);
+    }
+    expect(seen.size).toBeGreaterThan(1);
+  });
+
+  it('dedupes the split heroes even when the pool is smaller than count', () => {
+    // 只有「常用英雄」一条、拆出 2 个英雄时条目数正好等于槽位数，
+    // 走去重短路分支也要挡住同一个英雄占满两栏
+    const loneHero: CheerRef[] = [
+      { label: '常用英雄', value: '上官婉儿（128局，胜率100.0%）、狂铁（26局，胜率69.2%）', source: 'kpl' },
+    ];
+    const res = selectVisibleRefs(loneHero, undefined, 2);
+    expect(res).toHaveLength(1);
+    expect(res[0]?.hero?.name).toBe('上官婉儿');
+  });
+
+  it('parses games and win rate into hero chips', () => {
+    const rng = createRng('hero-parse');
+    const heroRefs: CheerRef[] = [
+      {
+        label: '常用英雄',
+        value: '夏洛特（32局，胜率68.8%）、狂铁（26局，胜率69.2%）',
+        source: 'kpl',
+      },
+      { label: 'KDA', value: '4.8', source: 'kpl' },
+    ];
+    const heroes = selectVisibleRefs(heroRefs, rng, 2).filter((r) => r.hero);
+    expect(heroes.length).toBeGreaterThan(0);
+    for (const ref of heroes) {
+      expect(ref.hero?.games).toBeGreaterThanOrEqual(12);
+      expect(ref.hero?.winRate).toBeGreaterThan(0);
+      expect(ref.hero?.winRate).toBeLessThan(100);
+    }
+  });
+
+  it('keeps a hero entry with name only when the backend omits details', () => {
+    const refs: CheerRef[] = [
+      { label: '常用英雄', value: '大乔、瑶、蔡文姬', source: 'kpl' },
+      { label: 'KDA', value: '4.8', source: 'kpl' },
+      { label: '胜率', value: '58.2%', source: 'kpl' },
+    ];
+    const picked = selectVisibleRefs(refs, createRng('name-only'), 2);
+    const hero = picked.find((r) => r.hero);
+    expect(hero?.value).toBe(hero?.hero?.name);
+    expect(hero?.hero?.games).toBeUndefined();
+    expect(hero?.hero?.winRate).toBeUndefined();
+  });
+
+  it('does not split values whose parentheses contain the separator', () => {
+    const refs: CheerRef[] = [
+      { label: '英雄池', value: '辅助（T0、T1）、对抗路（T2）', source: 'kpl' },
+      { label: 'KDA', value: '4.8', source: 'kpl' },
+      { label: '胜率', value: '58.2%', source: 'kpl' },
+    ];
+    const picked = selectVisibleRefs(refs, createRng('unbalanced'), 2);
+    expect(picked.some((r) => r.value.includes('、'))).toBe(false);
+    expect(picked.every((r) => r.hero === undefined)).toBe(true);
+  });
+
+  it('shortens the hero eyebrow for narrow slots', () => {
+    expect(heroEyebrowOf({ label: '常用英雄（按出场数）', value: '夏洛特', source: 'kpl' })).toBe('常用英雄');
+    expect(heroEyebrowOf({ label: '常用英雄', value: '夏洛特', source: 'kpl' })).toBe('常用英雄');
   });
 });
 

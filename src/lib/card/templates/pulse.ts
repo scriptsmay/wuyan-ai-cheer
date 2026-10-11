@@ -1,5 +1,5 @@
 import type { CardTemplate, TemplateContext } from '../types';
-import { selectVisibleRefs } from '../selection';
+import { heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   CARD_HEIGHT,
   CARD_WIDTH,
@@ -7,6 +7,7 @@ import {
   buildQrImage,
   buildSignalWavePath,
   drawGrain,
+  drawHeroChips,
   drawQrFramed,
   drawRuns,
   drawText,
@@ -200,7 +201,33 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
       for (const [i, ref] of visible.entries()) {
         const x = 92 + i * 320;
-        await drawText(context, ref.label, x, 1142, `400 22px "Noto Sans SC", sans-serif`, DIM);
+        await drawText(
+          context,
+          ref.hero ? heroEyebrowOf(ref) : ref.label,
+          x,
+          1142,
+          `400 22px "Noto Sans SC", sans-serif`,
+          DIM
+        );
+        if (ref.hero) {
+          await drawHeroChips(
+            context,
+            ref.hero,
+            { x, y: 1160, w: 290, h: 88 },
+            {
+              nameSize: 28,
+              metaSize: 20,
+              nameColor: theme.primary,
+              metaColor: DIM,
+              nameFill: `rgba(${theme.primaryRgb},0.12)`,
+              metaFill: 'rgba(11,33,48,0.05)',
+              stroke: LINE,
+              highColor: '#1F7A5C',
+              nameFamily: FAMILY_WENKAI,
+            }
+          );
+          continue;
+        }
         const valueFont = `700 38px "JetBrains Mono", "Noto Sans SC", monospace`;
         context.font = valueFont;
         await document.fonts.load(valueFont, ref.value);

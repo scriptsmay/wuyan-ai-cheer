@@ -1,11 +1,12 @@
 import type { CardTemplate, TemplateContext } from '../types';
-import { selectVisibleRefs } from '../selection';
+import { heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   FAMILY_BODY,
   FAMILY_WENKAI,
   buildQrImage,
   dayOfYear,
   drawGrain,
+  drawHeroChips,
   drawQrFramed,
   drawText,
   drawRuns,
@@ -13,6 +14,7 @@ import {
   formatDate,
   roundRectPath,
   strokeText,
+  toRgb,
 } from '../shared';
 
 /* 应援 · daily 杂志留白风：米白底 + 细线框 + 大留白排版 + 单点缀色 */
@@ -117,7 +119,33 @@ async function draw(ctx: TemplateContext): Promise<void> {
     const visible = selectVisibleRefs(input.refs, rng, 2);
     for (const [i, ref] of visible.entries()) {
       const x = 110 + i * 450;
-      await drawText(context, ref.label.toUpperCase(), x, 1128, `500 22px ${FAMILY_BODY}`, 'rgba(26,26,26,0.5)');
+      await drawText(
+        context,
+        (ref.hero ? heroEyebrowOf(ref) : ref.label).toUpperCase(),
+        x,
+        1128,
+        `500 22px ${FAMILY_BODY}`,
+        'rgba(26,26,26,0.5)'
+      );
+      if (ref.hero) {
+        await drawHeroChips(
+          context,
+          ref.hero,
+          { x, y: 1144, w: i === 0 ? 420 : 400, h: 78 },
+          {
+            nameSize: 30,
+            metaSize: 20,
+            nameColor: i === 0 ? accent : INK,
+            metaColor: 'rgba(26,26,26,0.7)',
+            nameFill: i === 0 ? `rgba(${toRgb(accent)},0.12)` : 'rgba(26,26,26,0.07)',
+            metaFill: 'rgba(26,26,26,0.05)',
+            stroke: 'rgba(26,26,26,0.35)',
+            highColor: '#1F7A5C',
+            radiusRatio: 0.14,
+          }
+        );
+        continue;
+      }
       const valueFont = `700 60px "JetBrains Mono", "Noto Sans SC", monospace`;
       context.font = valueFont;
       await document.fonts.load(valueFont, ref.value);

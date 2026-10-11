@@ -1,9 +1,22 @@
 export type Mood = 'victory' | 'low' | 'daily' | 'hope';
 
+/**
+ * 「常用英雄」括号详情拆出来的结构化战绩。
+ * 线上原始值形如 `夏洛特（32局，胜率68.8%）、狂铁（26局，胜率69.2%）…`，
+ * 拆分后每位英雄一条，局数/胜率可能缺失（后端只给名字时两者为 undefined）。
+ */
+export interface HeroStat {
+  name: string;
+  games?: number;
+  winRate?: number;
+}
+
 export interface CheerRef {
   label: string;
   value: string;
   source: string;
+  /** 仅英雄类条目携带；卡片据此改走「名字 + 局数 + 胜率」胶囊渲染，而非普通指标 */
+  hero?: HeroStat;
 }
 
 export interface CheerResult {

@@ -1,5 +1,5 @@
 import QRCode from 'qrcode';
-import type { Mood } from '../../types';
+import type { HeroStat, Mood } from '../../types';
 import type { CardAppearance } from './selection';
 import type { CardTheme } from './types';
 import type { CardRng } from './rng';
@@ -307,6 +307,227 @@ export async function fitText(
     size: opts.minSize,
     lineHeight: Math.round(opts.minSize * ratio),
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* 英雄战绩胶囊                                                        */
+/* ------------------------------------------------------------------ */
+
+/** 胜率配色强调阈值：≥60% 走强强调色，其余用常规数值色 */
+export const WIN_RATE_HIGH = 60;
+/** 胜率低于等于此值时不展示胜率胶囊（应援卡不呈现「低于五成」的战绩） */
+export const WIN_RATE_MIN_DISPLAY = 50;
+
+/** 可上卡的胜率；五成及以下（或后端未给）返回 null，胶囊排布随之收敛 */
+export function winRateForDisplay(hero: HeroStat): number | null {
+  return hero.winRate === undefined || hero.winRate <= WIN_RATE_MIN_DISPLAY ? null : hero.winRate;
+}
+
+export interface HeroChipsStyle {
+  /** 名字胶囊字号；空间不足时整套字号会按比例下调，不会溢出 box */
+  nameSize: number;
+  /** 局数 / 胜率胶囊字号 */
+  metaSize: number;
+  nameColor: string;
+  metaColor: string;
+  nameFill: string;
+  metaFill: string;
+  /** 胶囊描边色，缺省不描边 */
+  stroke?: string;
+  /** winRate ≥ WIN_RATE_HIGH 时的胜率文字色 */
+  highColor?: string;
+  /** 名字字体，缺省展示大字（黄油体） */
+  nameFamily?: string;
+  /** 圆角 / 高度比：0.5 为全圆胶囊（缺省），方角版式给 0.14 */
+  radiusRatio?: number;
+  /** 'right' 时 box.x 当作右边界，整组向左生长（便签卡右对齐数值列用） */
+  align?: 'left' | 'right';
+}
+
+interface HeroChip {
+  text: string;
+  size: number;
+  color: string;
+  fill: string;
+  font: string;
+  /** 实测胶囊宽度 */
+  w: number;
+  /** 胶囊高度 */
+  h: number;
+}
+
+async function measureHeroChip(
+  context: CanvasRenderingContext2D,
+  text: string,
+  size: number,
+  weight: number,
+  family: string,
+  color: string,
+  fill: string
+): Promise<HeroChip> {
+  const font = `${weight} ${size}px ${family}`;
+  context.font = font;
+  await document.fonts.load(font, text);
+  const padX = Math.round(size * 0.46);
+  return {
+    text,
+    size,
+    color,
+    fill,
+    font,
+    w: Math.round(context.measureText(text).width) + padX * 2,
+    h: Math.round(size * 1.68),
+  };
+}
+
+/**
+ * 英雄战绩胶囊：把「夏洛特 / 32局 / 胜率68.8%」三个字段排进一块窄槽。
+ *
+ * 排版按「字号优先、行数其次」逐级试排：先要单行带「胜率」二字的全量文案，
+ * 放不下就省掉「胜率」前缀（% 号自证含义），再放不下就拆成名字一行、
+ * 局数与胜率一行。各模板槽宽从 300（signal）到 470（poster）都能容下。
+ * 胜率不上图形，只靠字号与配色强调（≥WIN_RATE_HIGH 用 highColor）；
+ * 低于 WIN_RATE_MIN_DISPLAY 的胜率不渲染，排布自动收敛为「名字 + N局」。
+ *
+ * 返回胶囊组实际占用的底部 y，便于模板判断是否顶到面板边界。
+ */
+export async function drawHeroChips(
+  context: CanvasRenderingContext2D,
+  hero: HeroStat,
+  box: { x: number; y: number; w: number; h: number },
+  style: HeroChipsStyle
+): Promise<number> {
+  const winRate = winRateForDisplay(hero);
+
+  let last: { rows: HeroChip[][]; block: HeroBlock; gap: number; rowGap: number } | null = null;
+  for (const scale of HERO_CHIP_SCALES) {
+    for (const rows of await heroChipLayouts(context, hero, style, scale, winRate)) {
+      const gap = Math.round(style.metaSize * scale * 0.5);
+      const rowGap = Math.round(style.metaSize * scale * 0.42);
+      const block = measureBlock(rows, gap, rowGap);
+      last = { rows, block, gap, rowGap };
+      if (block.w <= box.w && block.h <= box.h) {
+        return paintChips(context, rows, block, box, style, gap, rowGap);
+      }
+    }
+  }
+  // 全档都塞不进（极窄槽）：也要把英雄画出来，允许纵向溢出面板
+  if (last) return paintChips(context, last.rows, last.block, box, style, last.gap, last.rowGap);
+  return box.y;
+}
+
+/** 逐级试排的字号比例：先保字大，再保行少 */
+const HERO_CHIP_SCALES = [1, 0.88, 0.78, 0.7];
+
+interface HeroBlock {
+  w: number;
+  h: number;
+}
+
+/**
+ * 按「单行全量 → 单行省「胜率」前缀 → 两行 → 三行」的顺序给出候选排布。
+ * 同字号下候选去重（无胜率时前两种排布等价），空行会被剔除。
+ */
+async function heroChipLayouts(
+  context: CanvasRenderingContext2D,
+  hero: HeroStat,
+  style: HeroChipsStyle,
+  scale: number,
+  winRate: number | null
+): Promise<HeroChip[][][]> {
+  const nameSize = Math.round(style.nameSize * scale);
+  const metaSize = Math.round(style.metaSize * scale);
+  const name = await measureHeroChip(
+    context,
+    hero.name,
+    nameSize,
+    400,
+    style.nameFamily ?? FAMILY_TITLE,
+    style.nameColor,
+    style.nameFill
+  );
+  const games =
+    hero.games === undefined
+      ? null
+      : await measureHeroChip(context, `${hero.games}局`, metaSize, 500, FAMILY_BODY, style.metaColor, style.metaFill);
+  const rateColor =
+    winRate !== null && winRate >= WIN_RATE_HIGH ? (style.highColor ?? style.metaColor) : style.metaColor;
+  const rate = async (text: string) =>
+    measureHeroChip(context, text, metaSize, 700, FAMILY_MONO, rateColor, style.metaFill);
+  const rateLong = winRate === null ? null : await rate(`胜率${winRate}%`);
+  const rateShort = winRate === null ? null : await rate(`${winRate}%`);
+
+  const meta = (chip: HeroChip | null) => [games, chip].filter((c): c is HeroChip => c !== null);
+  const layouts: HeroChip[][][] = [];
+  const seen = new Set<string>();
+  const push = (rows: HeroChip[][]) => {
+    const cleaned = rows.filter((row) => row.length > 0);
+    if (cleaned.length === 0) return;
+    const key = cleaned.map((row) => row.map((chip) => chip.text).join('+')).join('|');
+    if (seen.has(key)) return;
+    seen.add(key);
+    layouts.push(cleaned);
+  };
+  push([[name, ...meta(rateLong)]]);
+  push([[name, ...meta(rateShort)]]);
+  push([[name], meta(rateLong)]);
+  push([[name], meta(rateShort)]);
+  push([[name], meta(null), rateShort ? [rateShort] : []]);
+  return layouts;
+}
+
+function measureBlock(rows: HeroChip[][], gap: number, rowGap: number): HeroBlock {
+  let w = 0;
+  let h = 0;
+  for (const [i, row] of rows.entries()) {
+    w = Math.max(w, rowWidth(row, gap));
+    h += Math.max(...row.map((chip) => chip.h)) + (i > 0 ? rowGap : 0);
+  }
+  return { w, h };
+}
+
+function rowWidth(row: HeroChip[], gap: number): number {
+  return row.reduce((sum, chip) => sum + chip.w, 0) + gap * Math.max(row.length - 1, 0);
+}
+
+/** 落笔绘制，返回胶囊组底部 y。左对齐时各行共享左边界，右对齐共享右边界。 */
+function paintChips(
+  context: CanvasRenderingContext2D,
+  rows: HeroChip[][],
+  block: HeroBlock,
+  box: { x: number; y: number; w: number; h: number },
+  style: HeroChipsStyle,
+  gap: number,
+  rowGap: number
+): number {
+  const top = Math.max(box.y, box.y + (box.h - block.h) / 2);
+  let rowTop = top;
+  context.save();
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  for (const row of rows) {
+    const rowH = Math.max(...row.map((chip) => chip.h));
+    let cursor = style.align === 'right' ? box.x - rowWidth(row, gap) : box.x;
+    for (const chip of row) {
+      // 同行胶囊统一取本行最高者的框高：字号保留层级，上下沿对齐，
+      // 否则小胶囊会短一截、文字还落在框外偏下，排出来是「从高到低」的锯齿
+      roundRectPath(context, cursor, rowTop, chip.w, rowH, rowH * (style.radiusRatio ?? 0.5));
+      context.fillStyle = chip.fill;
+      context.fill();
+      if (style.stroke) {
+        context.lineWidth = 1;
+        context.strokeStyle = style.stroke;
+        context.stroke();
+      }
+      context.font = chip.font;
+      context.fillStyle = chip.color;
+      context.fillText(chip.text, cursor + chip.w / 2, rowTop + rowH / 2);
+      cursor += chip.w + gap;
+    }
+    rowTop += rowH + rowGap;
+  }
+  context.restore();
+  return rowTop - rowGap;
 }
 
 /* ------------------------------------------------------------------ */

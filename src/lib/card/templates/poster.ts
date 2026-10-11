@@ -1,10 +1,11 @@
 import type { CardTemplate, TemplateContext } from '../types';
-import { selectVisibleRefs } from '../selection';
+import { heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   FAMILY_BODY,
   FAMILY_TITLE,
   buildQrImage,
   drawHalftone,
+  drawHeroChips,
   drawQrFramed,
   drawText,
   drawRuns,
@@ -128,7 +129,33 @@ async function drawStats(ctx: TemplateContext, variant: PosterVariant, y: number
   if (visible.length) {
     for (const [i, ref] of visible.entries()) {
       const x = 92 + i * 470;
-      await drawText(context, ref.label, x, y - 46, `500 24px ${FAMILY_BODY}`, labelColor);
+      await drawText(
+        context,
+        ref.hero ? heroEyebrowOf(ref) : ref.label,
+        x,
+        y - 46,
+        `500 24px ${FAMILY_BODY}`,
+        labelColor
+      );
+      if (ref.hero) {
+        await drawHeroChips(
+          context,
+          ref.hero,
+          { x, y: y - 14, w: 400, h: 96 },
+          {
+            nameSize: 32,
+            metaSize: 22,
+            nameColor: onBand ? YELLOW : RED,
+            metaColor: valueColor,
+            nameFill: onBand ? 'rgba(246,239,224,0.16)' : 'rgba(224,57,47,0.12)',
+            metaFill: onBand ? 'rgba(246,239,224,0.08)' : 'rgba(26,21,18,0.06)',
+            stroke: onBand ? 'rgba(246,239,224,0.4)' : 'rgba(26,21,18,0.3)',
+            highColor: onBand ? '#7FD8B0' : '#1F7A5C',
+            radiusRatio: 0.16,
+          }
+        );
+        continue;
+      }
       const valueFont = `700 64px "JetBrains Mono", "Noto Sans SC", monospace`;
       context.font = valueFont;
       await document.fonts.load(valueFont, ref.value);

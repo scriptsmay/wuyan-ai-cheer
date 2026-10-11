@@ -1,13 +1,15 @@
 import type { CardTemplate, TemplateContext } from '../types';
-import { selectVisibleRefs } from '../selection';
+import { heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   CARD_HEIGHT,
+  FAMILY_SUBTITLE,
   FAMILY_WENKAI,
   fitText,
   CARD_WIDTH,
   FAMILY_TITLE,
   buildQrImage,
   buildSignalWavePath,
+  drawHeroChips,
   drawQrFramed,
   drawRays,
   drawRuns,
@@ -238,7 +240,33 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
       for (const [i, ref] of visible.entries()) {
         const x = 92 + i * 320;
-        await drawText(context, ref.label, x, 1142, `400 22px "Noto Sans SC", sans-serif`, '#6F93A3');
+        await drawText(
+          context,
+          ref.hero ? heroEyebrowOf(ref) : ref.label,
+          x,
+          1142,
+          `400 22px "Noto Sans SC", sans-serif`,
+          '#6F93A3'
+        );
+        if (ref.hero) {
+          await drawHeroChips(
+            context,
+            ref.hero,
+            { x, y: 1160, w: 290, h: 88 },
+            {
+              nameSize: 28,
+              metaSize: 20,
+              nameColor: theme.primary,
+              metaColor: '#6F93A3',
+              nameFill: `rgba(${theme.primaryRgb},0.16)`,
+              metaFill: 'rgba(36,67,90,0.45)',
+              stroke: 'rgba(60,100,130,0.6)',
+              highColor: '#5FD3A6',
+              nameFamily: FAMILY_SUBTITLE,
+            }
+          );
+          continue;
+        }
         context.font = `700 38px "JetBrains Mono", "Noto Sans SC", monospace`;
         await document.fonts.load(`700 38px "JetBrains Mono", "Noto Sans SC", monospace`, ref.value);
         context.fillStyle = theme.primary;
