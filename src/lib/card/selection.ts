@@ -2,21 +2,31 @@ import type { Mood, CheerRef, HeroStat } from '../../types';
 import { createRng, hashString, type CardRng } from './rng';
 
 export type TemplateId =
-  'note' | 'poster' | 'magazine' | 'dusk' | 'dawn' | 'signal' | 'pulse' | 'blueprint' | 'mist' | 'clipping';
+  | 'note'
+  | 'poster'
+  | 'magazine'
+  | 'dusk'
+  | 'dawn'
+  | 'signal'
+  | 'pulse'
+  | 'blueprint'
+  | 'mist'
+  | 'clipping'
+  | 'vermillion';
 
 /** 卡片取样的明暗外观，与站内主题（<html data-theme>）同源 */
 export type CardAppearance = 'light' | 'dark';
 
 /**
  * 心情 → 主模板家族（暗色外观，重构前的既有语义）：
- * - victory  大字报（色块冲击）
+ * - victory  釉里红（宣纸朱印国风，原大字报 redesign）
  * - daily    杂志留白
  * - low      暮色弥散（氛围感）
  * - hope     晨光弥散（渐变亮色）
  * 打卡卡固定便签风（note），不经过此表。
  */
 export const MOOD_PRIMARY: Record<Mood, TemplateId> = {
-  victory: 'poster',
+  victory: 'vermillion',
   daily: 'magazine',
   low: 'dusk',
   hope: 'dawn',
@@ -30,7 +40,7 @@ export const SIGNAL_FALLBACK_WEIGHT = 0.2;
  * 避免「情绪低落 = 一定是深紫夜空」。候选池一律排除 signal / dusk 两套深色。
  */
 export const LIGHT_PRIMARY: Record<Mood, TemplateId> = {
-  victory: 'poster',
+  victory: 'vermillion',
   daily: 'magazine',
   low: 'mist',
   hope: 'dawn',
@@ -44,8 +54,10 @@ export const LIGHT_PRIMARY_WEIGHT = 0.55;
  */
 export const LIGHT_ALTERNATES: Record<Mood, readonly (readonly [TemplateId, number])[]> = {
   victory: [
-    ['clipping', 0.6],
-    ['pulse', 0.4],
+    ['vermillion', 0.4],
+    ['poster', 0.3],
+    ['clipping', 0.2],
+    ['pulse', 0.1],
   ],
   daily: [
     ['pulse', 0.6],

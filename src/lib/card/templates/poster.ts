@@ -2,129 +2,54 @@ import type { CardTemplate, TemplateContext } from '../types';
 import { heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   FAMILY_BODY,
-  FAMILY_TITLE,
+  FAMILY_WENKAI,
   buildQrImage,
-  drawHalftone,
   drawHeroChips,
   drawQrFramed,
   drawText,
   drawRuns,
   fitText,
-  formatDate,
-  roundRectPath,
-  FAMILY_WENKAI,
+  loadImage,
 } from '../shared';
 
-/* 应援 · victory 大字报：陶土×奶油柔和色块 + 文楷体大字 + 印刷网点质感 */
+/* 应援 · victory 大字报：摄影背景 + 白色大字 + 手绘感框线（柔和版） */
 
-const CORAL = '#E8946F';
-const CORAL_DEEP = '#D67F5C';
-const CREAM = '#F7F1E3';
-const HONEY = '#F3CE85';
-const INK = '#4A322A';
-const CREAM_TEXT = '#FFF9EF';
+const WHITE = '#FFFFFF';
+const QRCODE_DARK = '#2A2521FF';
+const QRCODE_LIGHT = '#FFFFFFFE';
 
-interface PosterVariant {
-  /** 顶部主色块（0 到 topBottom 填 topColor） */
-  topColor: string;
-  topBottom: number;
-  bottomColor: string;
-  /** 底部色带（如黑条），null 无 */
-  band: { color: string; from: number } | null;
-  copyColor: string;
-  shadowColor: string;
-  halftoneColor: string;
-  eyebrowColor: string;
-  sealBg: string;
-  sealText: string;
-  /** y < zoneSplit 区域视为顶部色块区（决定 caption/正文配色） */
-  zoneSplit: number;
-  captionColor: string;
-  captionBar: string;
+interface PosterBg {
+  src: string;
+  /** 背景图焦点 y（0-1），cover 裁切时对齐该位置 */
+  focusY: number;
+  /** 顶部渐变压暗终止位置（0-1，相对卡高） */
+  topShade: number;
 }
 
-const VARIANTS: PosterVariant[] = [
-  {
-    topColor: CORAL,
-    topBottom: 900,
-    bottomColor: CREAM,
-    band: null,
-    copyColor: CREAM_TEXT,
-    shadowColor: HONEY,
-    halftoneColor: '#7A4530',
-    eyebrowColor: HONEY,
-    sealBg: CREAM,
-    sealText: CORAL_DEEP,
-    zoneSplit: 900,
-    captionColor: CREAM_TEXT,
-    captionBar: HONEY,
-  },
-  {
-    topColor: CORAL,
-    topBottom: 1440,
-    bottomColor: CORAL,
-    band: { color: INK, from: 1150 },
-    copyColor: CREAM_TEXT,
-    shadowColor: HONEY,
-    halftoneColor: '#7A4530',
-    eyebrowColor: HONEY,
-    sealBg: CREAM,
-    sealText: CORAL_DEEP,
-    zoneSplit: 1150,
-    captionColor: CREAM_TEXT,
-    captionBar: HONEY,
-  },
-  {
-    topColor: INK,
-    topBottom: 760,
-    bottomColor: CORAL,
-    band: null,
-    copyColor: HONEY,
-    shadowColor: CORAL_DEEP,
-    halftoneColor: CREAM,
-    eyebrowColor: HONEY,
-    sealBg: HONEY,
-    sealText: INK,
-    zoneSplit: 760,
-    captionColor: CREAM_TEXT,
-    captionBar: INK,
-  },
+const BACKGROUNDS: PosterBg[] = [
+  { src: '/bg/poster-field.jpg', focusY: 0.5, topShade: 0.62 },
+  // 暮色海面：上部天色浅淡，需更重的顶部压暗托住白字
+  { src: '/bg/poster-dusk-sea.jpg', focusY: 1, topShade: 0.72 },
+  // 海鸥涂鸦：深蓝天空白字对比好；主体在下半部，focusY 对齐底部
+  { src: '/bg/poster-gull-sky.jpg', focusY: 1, topShade: 0.45 },
 ];
 
-async function drawSeal(ctx: TemplateContext, variant: PosterVariant): Promise<void> {
-  const { ctx: context, rng } = ctx;
-  const size = 128;
-  const cx = 918;
-  const cy = 146;
-  context.save();
-  context.translate(cx, cy);
-  context.rotate(rng.range(-0.1, -0.04));
-  context.shadowColor = 'rgba(0,0,0,0.25)';
-  context.shadowBlur = 14;
-  context.shadowOffsetY = 4;
-  roundRectPath(context, -size / 2, -size / 2, size, size, 14);
-  context.fillStyle = variant.sealBg;
-  context.fill();
-  context.restore();
+/** 文案区可用宽度（左右边距对称） */
+const COPY_MARGIN = 88;
+const COPY_WIDTH = 1080 - COPY_MARGIN * 2;
 
-  const sealFont = `400 74px ${FAMILY_TITLE}`;
-  context.save();
-  context.translate(cx, cy);
-  context.rotate(rng.range(-0.08, -0.03));
-  context.font = sealFont;
-  await document.fonts.load(sealFont, '胜');
-  context.textAlign = 'center';
-  context.textBaseline = 'middle';
-  context.fillStyle = variant.sealText;
-  context.fillText('胜', 0, 4);
-  context.restore();
+async function drawQuoteMarks(context: CanvasRenderingContext2D, x: number, y: number, color: string): Promise<void> {
+  const font = `400 96px ${FAMILY_WENKAI}`;
+  context.font = font;
+  await document.fonts.load(font, '“');
+  context.fillStyle = color;
+  context.fillText('“', x, y);
 }
 
-async function drawStats(ctx: TemplateContext, variant: PosterVariant, y: number): Promise<void> {
+async function drawStats(ctx: TemplateContext, y: number): Promise<void> {
   const { ctx: context, input } = ctx;
-  const onBand = variant.band && y >= variant.band.from;
-  const labelColor = onBand ? 'rgba(247,241,227,0.65)' : 'rgba(74,50,42,0.6)';
-  const valueColor = onBand ? CREAM_TEXT : INK;
+  const labelColor = 'rgba(255,255,255,0.66)';
+  const valueColor = WHITE;
 
   const visible = input.showRefs === false ? [] : selectVisibleRefs(input.refs, ctx.rng, 2);
   if (visible.length) {
@@ -146,12 +71,12 @@ async function drawStats(ctx: TemplateContext, variant: PosterVariant, y: number
           {
             nameSize: 32,
             metaSize: 22,
-            nameColor: onBand ? HONEY : CORAL_DEEP,
-            metaColor: valueColor,
-            nameFill: onBand ? 'rgba(247,241,227,0.16)' : 'rgba(214,127,92,0.14)',
-            metaFill: onBand ? 'rgba(247,241,227,0.08)' : 'rgba(74,50,42,0.06)',
-            stroke: onBand ? 'rgba(247,241,227,0.4)' : 'rgba(74,50,42,0.3)',
-            highColor: onBand ? '#7FD8B0' : '#1F7A5C',
+            nameColor: WHITE,
+            metaColor: 'rgba(255,255,255,0.92)',
+            nameFill: 'rgba(255,255,255,0.14)',
+            metaFill: 'rgba(255,255,255,0.08)',
+            stroke: 'rgba(255,255,255,0.42)',
+            highColor: '#8FE0B8',
             radiusRatio: 0.16,
           }
         );
@@ -166,120 +91,145 @@ async function drawStats(ctx: TemplateContext, variant: PosterVariant, y: number
     return;
   }
 
-  // 无数据：三色装饰条
-  const colors = [variant.shadowColor, variant.eyebrowColor, onBand ? CREAM : INK];
-  const widths = [150, 76, 30];
+  // 无数据：白色装饰短线
+  const widths = [120, 56, 24];
   let x = 92;
-  for (const [i, w] of widths.entries()) {
-    context.fillStyle = colors[i] ?? INK;
-    context.globalAlpha = 0.9;
-    context.fillRect(x, y - 18, w, 16);
-    x += w + 26;
+  for (const w of widths) {
+    context.globalAlpha = 0.72;
+    context.fillStyle = WHITE;
+    context.fillRect(x, y - 8, w, 6);
+    x += w + 24;
   }
   context.globalAlpha = 1;
 }
 
 async function draw(ctx: TemplateContext): Promise<void> {
-  const { ctx: context, rng, input } = ctx;
-  const variant = rng.pick(VARIANTS);
+  const { ctx: context, input, dateLabel } = ctx;
+  // 背景不参与随机：直接由 variant 决定，保证「换一换」必换背景
+  // （两张图随机 pick 有 50% 概率停在原图，体验上等于没换）
+  const bg = BACKGROUNDS[(input.variant ?? 0) % BACKGROUNDS.length]!;
 
-  // 底色 + 顶部色块 + 底部色带
-  context.fillStyle = variant.bottomColor;
-  context.fillRect(0, 0, 1080, 1440);
-  context.fillStyle = variant.topColor;
-  context.fillRect(0, 0, 1080, variant.topBottom);
-  if (variant.band) {
-    context.fillStyle = variant.band.color;
-    context.fillRect(0, variant.band.from, 1080, 1440 - variant.band.from);
+  // ---- 背景：cover 铺满 + 上下渐变压暗 ----
+  const image = await loadImage(bg.src).catch(() => null);
+  if (image) {
+    const scale = Math.max(1080 / image.width, 1440 / image.height);
+    const w = image.width * scale;
+    const h = image.height * scale;
+    const x = (1080 - w) / 2;
+    const yMax = 1440 - h;
+    const y = yMax * bg.focusY;
+    context.drawImage(image, x, y, w, h);
+  } else {
+    // 背景缺失兜底：柔和中性底色
+    context.fillStyle = '#5E7A8C';
+    context.fillRect(0, 0, 1080, 1440);
   }
-  drawHalftone(context, rng, {
-    x: 0,
-    y: 0,
-    w: 1080,
-    h: variant.topBottom,
-    step: 26,
-    radius: 2.4,
-    alpha: 0.09,
-    color: variant.halftoneColor,
-  });
 
-  // 眉头
+  // 顶部渐变压暗：保大字可读；底部轻压暗：保数据/页脚可读
+  const topShadeEnd = 1440 * bg.topShade;
+  const topShade = context.createLinearGradient(0, 0, 0, topShadeEnd);
+  topShade.addColorStop(0, 'rgba(20,16,12,0.34)');
+  topShade.addColorStop(1, 'rgba(20,16,12,0)');
+  context.fillStyle = topShade;
+  context.fillRect(0, 0, 1080, topShadeEnd);
+
+  const bottomShade = context.createLinearGradient(0, 940, 0, 1440);
+  bottomShade.addColorStop(0, 'rgba(20,16,12,0)');
+  bottomShade.addColorStop(1, 'rgba(20,16,12,0.42)');
+  context.fillStyle = bottomShade;
+  context.fillRect(0, 940, 1080, 500);
+
+  // ---- 眉头（品牌）----
   await drawText(
     context,
     'VICTORY · KPL WUYAN',
-    92,
-    152,
-    `700 27px "Inter", "Noto Sans SC", sans-serif`,
-    variant.eyebrowColor
+    COPY_MARGIN,
+    148,
+    `700 26px "Inter", "Noto Sans SC", sans-serif`,
+    'rgba(255,255,255,0.92)'
   );
-  await drawSeal(ctx, variant);
 
-  // 主文案：文楷体大字 + 错位套印阴影。
-  // 兼顾短句震撼大字与长句（50字+）完整容纳不截断：
-  // maxLines 开放至 5 行，minSize 降至 58px；根据总行数与可用高度动态反推字号上限与行距
-  const copyTop = 336;
-  const captionGap = 88;
-  const captionMax = 880;
+  // ---- 主文案：文楷白字 + 细描边（保证任何背景上可读），手绘引号点题 ----
+  await drawQuoteMarks(context, COPY_MARGIN - 10, 316, 'rgba(255,255,255,0.85)');
+
+  const copyTop = 430;
+  const captionGap = 84;
+  const captionMax = 830;
   const availableHeight = captionMax - captionGap - copyTop;
   let fitted = await fitText(context, input.line, FAMILY_WENKAI, {
-    maxWidth: 900,
+    maxWidth: COPY_WIDTH,
     maxLines: 5,
-    maxSize: 148,
-    minSize: 58,
-    lineHeightRatio: 1.25,
+    maxSize: 132,
+    minSize: 56,
+    lineHeightRatio: 1.28,
     weight: 400,
   });
   if (fitted.lines.length >= 4) {
     const linesCount = fitted.lines.length;
-    const maxAllowedSize = Math.floor(availableHeight / Math.max(linesCount - 1, 1) / 1.18);
+    const maxAllowedSize = Math.floor(availableHeight / Math.max(linesCount - 1, 1) / 1.2);
     if (fitted.size > maxAllowedSize) {
       fitted = await fitText(context, input.line, FAMILY_WENKAI, {
-        maxWidth: 900,
+        maxWidth: COPY_WIDTH,
         maxLines: 5,
-        maxSize: Math.max(maxAllowedSize, 58),
-        minSize: 58,
-        lineHeightRatio: 1.18,
+        maxSize: Math.max(maxAllowedSize, 56),
+        minSize: 56,
+        lineHeightRatio: 1.2,
         weight: 400,
       });
     }
   }
-  const offsetX = rng.range(5, 8);
-  const offsetY = rng.range(4, 7);
   context.font = fitted.font;
   await document.fonts.load(fitted.font, input.line);
   fitted.lines.forEach((row, index) => {
     const baseline = copyTop + index * fitted.lineHeight;
-    context.fillStyle = variant.shadowColor;
-    context.fillText(row, 90 + offsetX, baseline + offsetY);
-    context.fillStyle = variant.copyColor;
-    context.fillText(row, 90, baseline);
+    // 极轻落影 + 细描边：仅保证复杂背景上的可读性，不形成重影
+    context.shadowColor = 'rgba(20,16,12,0.35)';
+    context.shadowBlur = 10;
+    context.shadowOffsetY = 2;
+    context.fillStyle = WHITE;
+    context.fillText(row, COPY_MARGIN, baseline);
+    context.shadowColor = 'transparent';
+    context.shadowBlur = 0;
+    context.shadowOffsetY = 0;
   });
 
-  // 心情标语 + 强调色条
+  // ---- 心情标语：引用线式（左侧竖线 + 白字），替代色条 ----
   const copyBottom = copyTop + (fitted.lines.length - 1) * fitted.lineHeight;
   const captionY = Math.min(copyBottom + captionGap, captionMax);
   if (input.emojiCaption) {
-    const font = `400 50px ${FAMILY_TITLE}`;
+    const font = `400 42px ${FAMILY_BODY}`;
     context.font = font;
     await document.fonts.load(font, input.emojiCaption);
-    context.fillStyle = variant.captionColor;
-    context.fillText(input.emojiCaption, 92, captionY);
-    context.fillStyle = variant.captionBar;
-    context.fillRect(92, captionY + 20, Math.min(context.measureText(input.emojiCaption).width + 8, 640), 12);
+    context.fillStyle = 'rgba(255,255,255,0.94)';
+    context.fillText(input.emojiCaption, COPY_MARGIN + 26, captionY);
+    context.fillStyle = 'rgba(255,255,255,0.55)';
+    context.fillRect(COPY_MARGIN, captionY - 34, 4, 46);
   }
 
-  // 数据区（在底色区）
-  const statsY = variant.band ? 1064 : 1088;
-  await drawStats(ctx, variant, statsY);
+  // ---- 数据区 ----
+  await drawStats(ctx, 1088);
 
-  // QR + 页脚
-  const qrZone = variant.band ? variant.band.color : variant.bottomColor;
+  // // ---- 日期（右下，参考图样式）----
+  // const today = formatDate(new Date());
+  // const dateText = today.slice(5).replace('-', '.');
+  // const dateFont = `600 76px "Inter", "Noto Sans SC", sans-serif`;
+  // context.font = dateFont;
+  // await document.fonts.load(dateFont, dateText);
+  // context.fillStyle = 'rgba(255,255,255,0.95)';
+  // context.textAlign = 'right';
+  // context.fillText(dateText, 988, 1156);
+  // context.font = `400 26px ${FAMILY_BODY}`;
+  // await document.fonts.load(`400 26px ${FAMILY_BODY}`, '星期一');
+  // const weekday = new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', weekday: 'short' }).format(new Date());
+  // context.fillText(`(${weekday})`, 988, 1198);
+  // context.textAlign = 'left';
+
+  // ---- QR + 页脚 ----
   if (input.showQr !== false) {
-    const qr = await buildQrImage('#4A322AFF', '#FFFFFFFE');
-    const qrY = variant.band ? 1196 : 1236;
+    const qr = await buildQrImage(QRCODE_DARK, QRCODE_LIGHT);
     drawQrFramed(context, qr, {
       x: 856,
-      y: qrY,
+      y: 1236,
       size: 168,
       frameFill: '#FFFFFF',
       radius: 10,
@@ -288,23 +238,22 @@ async function draw(ctx: TemplateContext): Promise<void> {
       context,
       '扫码接收胜利信号',
       940,
-      qrY - 16,
+      1220,
       `500 22px ${FAMILY_BODY}`,
-      qrZone === INK ? 'rgba(247,241,227,0.8)' : 'rgba(74,50,42,0.7)',
+      'rgba(255,255,255,0.85)',
       'center'
     );
   }
 
-  const today = formatDate(new Date());
-  const footerColor = variant.band ? 'rgba(247,241,227,0.75)' : 'rgba(74,50,42,0.65)';
+  const footerColor = 'rgba(255,255,255,0.78)';
   await drawRuns(
     context,
     [
-      { text: today, font: `500 24px "JetBrains Mono", "Noto Sans SC", monospace`, color: footerColor },
+      { text: dateLabel, font: `500 24px "JetBrains Mono", "Noto Sans SC", monospace`, color: footerColor },
       { text: ' · KPL无言应援信号站', font: `500 24px ${FAMILY_BODY}`, color: footerColor },
     ],
     92,
-    variant.band ? 1392 : 1408
+    1404
   );
 }
 

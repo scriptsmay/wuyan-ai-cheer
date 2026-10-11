@@ -322,6 +322,7 @@ describe('template registry', () => {
     'blueprint',
     'mist',
     'clipping',
+    'vermillion',
   ] as const;
 
   it('exposes all ten templates with draw functions', () => {

@@ -20,7 +20,8 @@ import {
 
 /* 应援 · 蓝图方格纸：浅灰底 + 双尺度工程网格 + 标注尺寸线 + 右下角标题栏 */
 
-const BASES = ['#F4F7FA', '#EFF4F9', '#EDF3F8'];
+// const BASES = ['#F4F7FA', '#EFF4F9', '#EDF3F8'];
+const BASES = ['#F4F7FA', '#fdfdfd', '#FFFFFF'];
 const INK = '#0B2130';
 const MUTED = '#45657A';
 const DIM = '#7593A8';

@@ -10,6 +10,7 @@ import { pulseTemplate } from './pulse';
 import { blueprintTemplate } from './blueprint';
 import { mistTemplate } from './mist';
 import { clippingTemplate } from './clipping';
+import { vermillionTemplate } from './vermillion';
 
 export const TEMPLATES: Record<TemplateId, CardTemplate> = {
   note: noteTemplate,
@@ -22,4 +23,5 @@ export const TEMPLATES: Record<TemplateId, CardTemplate> = {
   blueprint: blueprintTemplate,
   mist: mistTemplate,
   clipping: clippingTemplate,
+  vermillion: vermillionTemplate,
 };

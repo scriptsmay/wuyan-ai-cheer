@@ -33,7 +33,8 @@ interface CaseDef {
 
 const ALL_CASES: CaseDef[] = [
   { key: 'note', label: 'note · 手写日签（打卡卡）', templateId: 'note', checkin: true, mood: 'daily' },
-  { key: 'poster', label: 'poster · 大字报（victory）', templateId: 'poster', mood: 'victory' },
+  { key: 'poster', label: 'poster · 大字报（victory 旧版）', templateId: 'poster', mood: 'victory' },
+  { key: 'vermillion', label: 'vermillion · 釉里红（victory 新版）', templateId: 'vermillion', mood: 'victory' },
   { key: 'magazine', label: 'magazine · 杂志留白（daily）', templateId: 'magazine', mood: 'daily' },
   { key: 'dusk', label: 'dusk · 暮色弥散（low）', templateId: 'dusk', mood: 'low', appearance: 'dark' },
   { key: 'dawn', label: 'dawn · 晨光弥散（hope）', templateId: 'dawn', mood: 'hope' },
@@ -59,6 +60,7 @@ const ALL_CASES: CaseDef[] = [
 const DEFAULT_LINES: Record<string, string> = {
   note: '打卡第 87 天，习惯已经长在身上啦，今天也稳稳完成！',
   poster: '还记得无言关羽开大的那波绕后吗，19局78.9%的胜率不是白来的，每次想到那把刀落下来的瞬间都起鸡皮疙瘩',
+  vermillion: '还记得无言关羽开大的那波绕后吗，19局78.9%的胜率不是白来的，每次想到那把刀落下来的瞬间都起鸡皮疙瘩',
   magazine: '今天也要按部就班地努力，稳稳地前进。',
   dusk: '低谷没关系，慢慢充电，星星会陪着我们。',
   dawn: '新的一天新的期待，阳光已经在路上了。',
@@ -72,6 +74,7 @@ const DEFAULT_LINES: Record<string, string> = {
 const CAPTIONS: Record<string, string> = {
   note: '又是元气满满的一天',
   poster: '胜利是我们的',
+  vermillion: '胜利是我们的',
   magazine: '稳稳的日常',
   dusk: '充电中，别催',
   dawn: '元气满格',
