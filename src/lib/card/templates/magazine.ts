@@ -72,7 +72,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
   context.fillRect(110, 188, 128, 6);
 
   // 眉头
-  await drawText(context, '日常应援 · DAILY SIGNAL', 110, 282, `500 24px ${FAMILY_BODY}`, 'rgba(26,26,26,0.55)');
+  await drawText(context, '今日支持 · DAILY SIGNAL', 110, 282, `500 24px ${FAMILY_BODY}`, 'rgba(26,26,26,0.55)');
   context.fillStyle = accent;
   context.fillRect(110, 306, 26, 26);
 

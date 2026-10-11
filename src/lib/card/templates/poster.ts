@@ -12,16 +12,17 @@ import {
   fitText,
   formatDate,
   roundRectPath,
+  FAMILY_WENKAI,
 } from '../shared';
 
-/* 应援 · victory 大字报：红黄撞色色块冲击 + 黄油体超大字 + 印刷网点质感 */
+/* 应援 · victory 大字报：陶土×奶油柔和色块 + 文楷体大字 + 印刷网点质感 */
 
-const RED = '#E0392F';
-const RED_DEEP = '#C22F26';
-const CREAM = '#F6EFE0';
-const YELLOW = '#FFD23F';
-const INK = '#1A1512';
-const CREAM_TEXT = '#FFF6E5';
+const CORAL = '#E8946F';
+const CORAL_DEEP = '#D67F5C';
+const CREAM = '#F7F1E3';
+const HONEY = '#F3CE85';
+const INK = '#4A322A';
+const CREAM_TEXT = '#FFF9EF';
 
 interface PosterVariant {
   /** 顶部主色块（0 到 topBottom 填 topColor） */
@@ -44,45 +45,45 @@ interface PosterVariant {
 
 const VARIANTS: PosterVariant[] = [
   {
-    topColor: RED,
+    topColor: CORAL,
     topBottom: 900,
     bottomColor: CREAM,
     band: null,
     copyColor: CREAM_TEXT,
-    shadowColor: YELLOW,
-    halftoneColor: '#000000',
-    eyebrowColor: YELLOW,
+    shadowColor: HONEY,
+    halftoneColor: '#7A4530',
+    eyebrowColor: HONEY,
     sealBg: CREAM,
-    sealText: RED,
+    sealText: CORAL_DEEP,
     zoneSplit: 900,
     captionColor: CREAM_TEXT,
-    captionBar: YELLOW,
+    captionBar: HONEY,
   },
   {
-    topColor: RED,
+    topColor: CORAL,
     topBottom: 1440,
-    bottomColor: RED,
+    bottomColor: CORAL,
     band: { color: INK, from: 1150 },
     copyColor: CREAM_TEXT,
-    shadowColor: YELLOW,
-    halftoneColor: '#000000',
-    eyebrowColor: YELLOW,
+    shadowColor: HONEY,
+    halftoneColor: '#7A4530',
+    eyebrowColor: HONEY,
     sealBg: CREAM,
-    sealText: RED,
+    sealText: CORAL_DEEP,
     zoneSplit: 1150,
     captionColor: CREAM_TEXT,
-    captionBar: YELLOW,
+    captionBar: HONEY,
   },
   {
     topColor: INK,
     topBottom: 760,
-    bottomColor: RED,
+    bottomColor: CORAL,
     band: null,
-    copyColor: YELLOW,
-    shadowColor: RED_DEEP,
+    copyColor: HONEY,
+    shadowColor: CORAL_DEEP,
     halftoneColor: CREAM,
-    eyebrowColor: YELLOW,
-    sealBg: YELLOW,
+    eyebrowColor: HONEY,
+    sealBg: HONEY,
     sealText: INK,
     zoneSplit: 760,
     captionColor: CREAM_TEXT,
@@ -94,7 +95,7 @@ async function drawSeal(ctx: TemplateContext, variant: PosterVariant): Promise<v
   const { ctx: context, rng } = ctx;
   const size = 128;
   const cx = 918;
-  const cy = 196;
+  const cy = 146;
   context.save();
   context.translate(cx, cy);
   context.rotate(rng.range(-0.1, -0.04));
@@ -122,7 +123,7 @@ async function drawSeal(ctx: TemplateContext, variant: PosterVariant): Promise<v
 async function drawStats(ctx: TemplateContext, variant: PosterVariant, y: number): Promise<void> {
   const { ctx: context, input } = ctx;
   const onBand = variant.band && y >= variant.band.from;
-  const labelColor = onBand ? 'rgba(246,239,224,0.65)' : 'rgba(26,21,18,0.6)';
+  const labelColor = onBand ? 'rgba(247,241,227,0.65)' : 'rgba(74,50,42,0.6)';
   const valueColor = onBand ? CREAM_TEXT : INK;
 
   const visible = input.showRefs === false ? [] : selectVisibleRefs(input.refs, ctx.rng, 2);
@@ -145,11 +146,11 @@ async function drawStats(ctx: TemplateContext, variant: PosterVariant, y: number
           {
             nameSize: 32,
             metaSize: 22,
-            nameColor: onBand ? YELLOW : RED,
+            nameColor: onBand ? HONEY : CORAL_DEEP,
             metaColor: valueColor,
-            nameFill: onBand ? 'rgba(246,239,224,0.16)' : 'rgba(224,57,47,0.12)',
-            metaFill: onBand ? 'rgba(246,239,224,0.08)' : 'rgba(26,21,18,0.06)',
-            stroke: onBand ? 'rgba(246,239,224,0.4)' : 'rgba(26,21,18,0.3)',
+            nameFill: onBand ? 'rgba(247,241,227,0.16)' : 'rgba(214,127,92,0.14)',
+            metaFill: onBand ? 'rgba(247,241,227,0.08)' : 'rgba(74,50,42,0.06)',
+            stroke: onBand ? 'rgba(247,241,227,0.4)' : 'rgba(74,50,42,0.3)',
             highColor: onBand ? '#7FD8B0' : '#1F7A5C',
             radiusRatio: 0.16,
           }
@@ -213,26 +214,26 @@ async function draw(ctx: TemplateContext): Promise<void> {
   );
   await drawSeal(ctx, variant);
 
-  // 主文案：黄油体特大字 + 错位套印阴影。
+  // 主文案：文楷体大字 + 错位套印阴影。
   // 兼顾短句震撼大字与长句（50字+）完整容纳不截断：
   // maxLines 开放至 5 行，minSize 降至 58px；根据总行数与可用高度动态反推字号上限与行距
   const copyTop = 336;
   const captionGap = 88;
   const captionMax = 880;
   const availableHeight = captionMax - captionGap - copyTop;
-  let fitted = await fitText(context, input.line, FAMILY_TITLE, {
+  let fitted = await fitText(context, input.line, FAMILY_WENKAI, {
     maxWidth: 900,
     maxLines: 5,
     maxSize: 148,
     minSize: 58,
-    lineHeightRatio: 1.2,
+    lineHeightRatio: 1.25,
     weight: 400,
   });
   if (fitted.lines.length >= 4) {
     const linesCount = fitted.lines.length;
     const maxAllowedSize = Math.floor(availableHeight / Math.max(linesCount - 1, 1) / 1.18);
     if (fitted.size > maxAllowedSize) {
-      fitted = await fitText(context, input.line, FAMILY_TITLE, {
+      fitted = await fitText(context, input.line, FAMILY_WENKAI, {
         maxWidth: 900,
         maxLines: 5,
         maxSize: Math.max(maxAllowedSize, 58),
@@ -274,7 +275,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
   // QR + 页脚
   const qrZone = variant.band ? variant.band.color : variant.bottomColor;
   if (input.showQr !== false) {
-    const qr = await buildQrImage('#1A1512FF', '#FFFFFFFE');
+    const qr = await buildQrImage('#4A322AFF', '#FFFFFFFE');
     const qrY = variant.band ? 1196 : 1236;
     drawQrFramed(context, qr, {
       x: 856,
@@ -289,13 +290,13 @@ async function draw(ctx: TemplateContext): Promise<void> {
       940,
       qrY - 16,
       `500 22px ${FAMILY_BODY}`,
-      qrZone === INK ? 'rgba(246,239,224,0.8)' : 'rgba(26,21,18,0.7)',
+      qrZone === INK ? 'rgba(247,241,227,0.8)' : 'rgba(74,50,42,0.7)',
       'center'
     );
   }
 
   const today = formatDate(new Date());
-  const footerColor = variant.band ? 'rgba(246,239,224,0.75)' : 'rgba(26,21,18,0.65)';
+  const footerColor = variant.band ? 'rgba(247,241,227,0.75)' : 'rgba(74,50,42,0.65)';
   await drawRuns(
     context,
     [

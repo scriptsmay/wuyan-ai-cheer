@@ -257,7 +257,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
     `600 24px ${FAMILY_MONO}`,
     theme.primary
   );
-  await drawText(context, '今日应援结构图', 96, 224, `400 52px ${FAMILY_SUBTITLE}`, INK);
+  await drawText(context, '今日加油卡片', 96, 224, `400 52px ${FAMILY_SUBTITLE}`, INK);
   dimensionH(context, 96, 984, 262, 'SPAN 888');
 
   // 主文案（图纸正文用中等重量无衬线，读起来像规格说明）

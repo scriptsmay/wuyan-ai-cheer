@@ -62,7 +62,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
     `600 24px "Inter", "Noto Sans SC", sans-serif`,
     'rgba(200,190,240,0.55)'
   );
-  await drawText(context, '低谷陪伴信号', 92, 226, `400 46px ${FAMILY_WENKAI}`, 'rgba(244,239,255,0.92)');
+  await drawText(context, '晚幕陪伴信号', 92, 226, `400 46px ${FAMILY_WENKAI}`, 'rgba(244,239,255,0.92)');
 
   // 主文案
   const copyTop = 468;

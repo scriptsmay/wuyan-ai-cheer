@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>胜利海报重设计 · 4 套主题提案</title>
+<link rel="stylesheet" href="../node_modules/@fontsource/zcool-qingke-huangyou/400.css" />
+<link rel="stylesheet" href="../node_modules/@fontsource/noto-sans-sc/chinese-simplified-400.css" />
+<link rel="stylesheet" href="../node_modules/@fontsource/noto-sans-sc/chinese-simplified-500.css" />
+<link rel="stylesheet" href="../node_modules/@fontsource/noto-sans-sc/chinese-simplified-700.css" />
+<link rel="stylesheet" href="../node_modules/@fontsource/jetbrains-mono/500.css" />
+<link rel="stylesheet" href="../node_modules/@fontsource/jetbrains-mono/700.css" />
+<link rel="stylesheet" href="../node_modules/@fontsource/inter/600.css" />
+<link rel="stylesheet" href="../node_modules/@fontsource/inter/700.css" />
+<link rel="stylesheet" href="../node_modules/@fontsource/inter/800.css" />
+<link rel="stylesheet" href="../node_modules/lxgw-wenkai-screen-webfont/lxgwwenkaiscreen.css" />
+<link rel="stylesheet" href="../node_modules/harmonyos-sans-sc-webfont-splitted/dist/Medium.css" />
+<style>
+  :root {
+    --font-title: "ZCOOL QingKe HuangYou", "Noto Sans SC", sans-serif;
+    --font-sub: "HarmonyOS Sans SC", "Noto Sans SC", sans-serif;
+    --font-body: "Noto Sans SC", sans-serif;
+    --font-mono: "JetBrains Mono", "Noto Sans SC", monospace;
+    --font-en: "Inter", "Noto Sans SC", sans-serif;
+    --font-wenkai: "LXGW WenKai Screen", "Noto Sans SC", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #EDEAE3;
+    font-family: var(--font-body);
+    color: #2A2620;
+    padding: 48px 40px 80px;
+  }
+  .page-head { max-width: 1440px; margin: 0 auto 40px; }
+  .page-head h1 {
+    font-family: var(--font-title);
+    font-size: 34px; font-weight: 400; letter-spacing: 1px;
+  }
+  .page-head p {
+    margin-top: 10px; font-size: 14px; line-height: 1.9; color: #6B655B; max-width: 860px;
+  }
+  .page-head .diagnosis {
+    margin-top: 16px; padding: 14px 18px; background: #FFFDF8;
+    border: 1px solid #E2DCCE; border-radius: 10px;
+    font-size: 13px; line-height: 2; color: #55504A;
+  }
+  .page-head .diagnosis b { color: #B4552E; }
+  .grid {
+    max-width: 1440px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 44px 40px;
+  }
+  .proposal { display: flex; flex-direction: column; gap: 14px; }
+  .proposal-meta { padding: 0 4px; }
+  .proposal-meta h2 {
+    font-size: 19px; font-weight: 700; display: flex; align-items: center; gap: 10px;
+  }
+  .proposal-meta h2 .tag {
+    font-family: var(--font-en); font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    padding: 3px 8px; border-radius: 999px; background: #2A2620; color: #F5F0E6;
+  }
+  .proposal-meta .desc { margin-top: 6px; font-size: 13px; line-height: 1.85; color: #6B655B; }
+  .swatches { display: flex; gap: 6px; margin-top: 10px; }
+  .swatches span {
+    width: 22px; height: 22px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.12);
+  }
+  .card-frame {
+    position: relative; width: 454px; height: 605px;
+    border-radius: 14px; overflow: hidden; cursor: zoom-in;
+    box-shadow: 0 14px 40px rgba(40,32,22,0.18), 0 2px 8px rgba(40,32,22,0.1);
+    transition: box-shadow .2s;
+  }
+  .card-frame:hover { box-shadow: 0 18px 52px rgba(40,32,22,0.26), 0 2px 8px rgba(40,32,22,0.12); }
+  .card-frame.zoomed {
+    cursor: zoom-out; position: relative; z-index: 50;
+    width: 756px; height: 1008px;
+    box-shadow: 0 30px 90px rgba(20,16,10,0.45);
+  }
+  .card {
+    width: 1080px; height: 1440px; position: absolute; top: 0; left: 0;
+    transform: scale(0.4204); transform-origin: top left;
+    overflow: hidden; position: absolute;
+  }
+  .card-frame.zoomed .card { transform: scale(0.7); }
+  .hint { font-size: 12px; color: #A39C8F; padding: 0 4px; }
+
+  /* ============ 通用小件 ============ */
+  .chips { display: flex; align-items: center; gap: 12px; }
+  .chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 14px; padding: 0 20px; height: 54px; font-size: 22px;
+  }
+  .chip.hero { font-family: var(--font-title); font-size: 32px; padding: 0 24px; }
+  .chip.mono { font-family: var(--font-mono); font-weight: 700; }
+  .qr-box { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .qr-box .qr-label { font-size: 22px; font-weight: 500; font-family: var(--font-sub); }
+  .qr-box canvas { display: block; }
+
+  /* ============ A 鎏金暗场 ============ */
+  .tA { background: #14161E; color: #F2E9D8; }
+  .tA .bg-glow {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(720px 520px at 12% 4%, rgba(244,201,93,0.14), transparent 68%),
+      radial-gradient(640px 640px at 96% 30%, rgba(224,70,62,0.08), transparent 66%);
+  }
+  .tA .court {
+    position: absolute; inset: 0; opacity: 0.5;
+    background-image:
+      linear-gradient(rgba(244,201,93,0.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(244,201,93,0.055) 1px, transparent 1px);
+    background-size: 108px 108px;
+    mask-image: radial-gradient(900px 700px at 30% 20%, #000 30%, transparent 80%);
+  }
+  .tA .inner { position: absolute; inset: 0; padding: 118px 92px 0; }
+  .tA .eyebrow {
+    display: flex; align-items: center; gap: 20px;
+    font-family: var(--font-en); font-weight: 700; font-size: 27px;
+    letter-spacing: 5px; color: #F4C95D;
+  }
+  .tA .eyebrow::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(244,201,93,0.55), transparent); }
+  .tA .seal {
+    position: absolute; top: 92px; right: 92px; width: 132px; height: 132px;
+    border-radius: 18px; background: #C8372E;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.45), inset 0 0 0 3px rgba(255,244,222,0.9), inset 0 0 0 9px rgba(0,0,0,0.14);
+    display: flex; align-items: center; justify-content: center;
+    transform: rotate(-4deg);
+    font-family: var(--font-title); font-size: 76px; color: #FFF6E4;
+  }
+  .tA .copy {
+    margin-top: 118px;
+    font-family: var(--font-title); font-weight: 400; font-size: 88px; line-height: 1.24;
+    background: linear-gradient(178deg, #FBE9B8 8%, #F4C95D 46%, #D99A2B 96%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 6px 0 rgba(0,0,0,0.55)) drop-shadow(0 14px 30px rgba(0,0,0,0.35));
+    text-wrap: balance;
+  }
+  .tA .caption {
+    margin-top: 66px; display: flex; align-items: center; gap: 22px;
+    font-family: var(--font-title); font-size: 48px; color: #F2E9D8;
+  }
+  .tA .caption::before { content: ""; width: 58px; height: 12px; background: #C8372E; border-radius: 3px; }
+  .tA .stats {
+    position: absolute; left: 92px; right: 92px; bottom: 322px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding-top: 40px; border-top: 1px solid rgba(244,201,93,0.3);
+  }
+  .tA .stat-label { font-size: 24px; color: rgba(242,233,216,0.55); font-family: var(--font-sub); }
+  .tA .stat-num {
+    font-family: var(--font-mono); font-weight: 700; font-size: 84px; color: #F4C95D; line-height: 1.15;
+  }
+  .tA .chips .chip.hero { background: rgba(244,201,93,0.14); color: #F4C95D; }
+  .tA .chips .chip { background: rgba(242,233,216,0.07); color: #F2E9D8; border: 1px solid rgba(244,201,93,0.35); }
+  .tA .chips .chip .win { color: #7FD8B0; }
+  .tA .qr-box { right: 92px; bottom: 96px; }
+  .tA .qr-box .qr-label { color: rgba(242,233,216,0.75); }
+  .tA .footer {
+    position: absolute; left: 92px; bottom: 88px;
+    font-size: 24px; color: rgba(242,233,216,0.6); font-family: var(--font-sub);
+  }
+  .tA .footer .mono { font-family: var(--font-mono); font-weight: 500; }
+
+  /* ============ B 号外报纸 ============ */
+  .tB { background: #F6F0E1; color: #211D16; }
+  .tB .dots {
+    position: absolute; inset: 0; opacity: 0.5;
+    background-image: radial-gradient(rgba(33,29,22,0.16) 1.4px, transparent 1.4px);
+    background-size: 26px 26px;
+    mask-image: linear-gradient(180deg, #000 0%, transparent 46%);
+  }
+  .tB .inner { position: absolute; inset: 0; padding: 104px 92px 0; }
+  .tB .masthead { border-bottom: 6px solid #211D16; padding-bottom: 22px; position: relative; }
+  .tB .masthead::after { content: ""; position: absolute; left: 0; right: 0; bottom: -14px; height: 2px; background: #211D16; }
+  .tB .mast-line1 {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--font-en); font-weight: 800; font-size: 52px; letter-spacing: 2px;
+  }
+  .tB .mast-line1 .date { font-family: var(--font-mono); font-weight: 500; font-size: 26px; letter-spacing: 0; }
+  .tB .mast-line2 {
+    margin-top: 10px; display: flex; justify-content: space-between;
+    font-size: 22px; font-family: var(--font-sub); color: #6E675B;
+  }
+  .tB .stamp {
+    position: absolute; top: 250px; right: 92px; width: 138px; height: 138px;
+    border: 7px solid #C63A26; border-radius: 16px; transform: rotate(6deg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-title); font-size: 82px; color: #C63A26;
+    box-shadow: inset 0 0 0 3px #F6F0E1, inset 0 0 0 5px #C63A26;
+    opacity: 0.92;
+  }
+  .tB .copy {
+    margin-top: 96px; max-width: 880px;
+    font-family: var(--font-title); font-weight: 400; font-size: 86px; line-height: 1.26;
+    color: #211D16; text-wrap: balance; position: relative; z-index: 1;
+    text-shadow: 4px 4px 0 rgba(198,58,38,0.85);
+  }
+  .tB .caption {
+    margin-top: 56px; display: inline-block;
+    font-family: var(--font-title); font-size: 46px; color: #C63A26;
+    border-bottom: 10px solid #C63A26; padding-bottom: 8px;
+    box-shadow: 0 16px 0 -8px #211D16;
+  }
+  .tB .stats {
+    position: absolute; left: 92px; right: 92px; bottom: 322px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    border-top: 2px solid #211D16; padding-top: 36px;
+  }
+  .tB .stat-label { font-size: 23px; color: #6E675B; font-family: var(--font-sub); margin-bottom: 8px; }
+  .tB .stat-num { font-family: var(--font-mono); font-weight: 700; font-size: 80px; color: #211D16; line-height: 1.1; }
+  .tB .chips .chip.hero { background: #C63A26; color: #F6F0E1; border-radius: 8px; }
+  .tB .chips .chip { background: transparent; border: 2px solid #211D16; color: #211D16; border-radius: 8px; }
+  .tB .chips .chip .win { color: #1F7A5C; }
+  .tB .qr-box { right: 92px; bottom: 86px; }
+  .tB .qr-box .qr-label { color: #211D16; }
+  .tB .qr-box .qr-frame { border: 3px solid #211D16; border-radius: 10px; background: #FFFDF6; padding: 10px; }
+  .tB .footer {
+    position: absolute; left: 92px; bottom: 84px;
+    font-size: 24px; color: #6E675B; font-family: var(--font-sub);
+  }
+  .tB .footer .mono { font-family: var(--font-mono); font-weight: 500; }
+
+  /* ============ C 釉里红 ============ */
+  .tC { background: #F5EDDC; color: #3A2B24; }
+  .tC .corner { position: absolute; width: 46px; height: 46px; border: 3px solid rgba(195,57,43,0.55); }
+  .tC .corner.tl { top: 54px; left: 54px; border-right: 0; border-bottom: 0; }
+  .tC .corner.tr { top: 54px; right: 54px; border-left: 0; border-bottom: 0; }
+  .tC .corner.bl { bottom: 54px; left: 54px; border-right: 0; border-top: 0; }
+  .tC .corner.br { bottom: 54px; right: 54px; border-left: 0; border-top: 0; }
+  .tC .side-strip {
+    position: absolute; top: 130px; right: 88px;
+    writing-mode: vertical-rl; letter-spacing: 14px;
+    font-family: var(--font-wenkai); font-size: 30px; color: rgba(58,43,36,0.62);
+    border-right: 2px solid rgba(195,57,43,0.5); padding-right: 16px; height: 420px;
+  }
+  .tC .inner { position: absolute; inset: 0; padding: 128px 92px 0; }
+  .tC .eyebrow {
+    font-family: var(--font-en); font-weight: 700; font-size: 25px; letter-spacing: 6px;
+    color: #C3392B;
+  }
+  .tC .cseal {
+    position: absolute; top: 106px; right: 196px; width: 148px; height: 148px;
+    border-radius: 50%; background: #C3392B; transform: rotate(-6deg);
+    box-shadow: inset 0 0 0 5px rgba(245,237,220,0.95), inset 0 0 0 10px rgba(140,26,18,0.5), 0 8px 22px rgba(140,26,18,0.28);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-title); font-size: 80px; color: #F8EFDC;
+  }
+  .tC .copy {
+    margin-top: 146px; max-width: 800px;
+    font-family: var(--font-title); font-weight: 400; font-size: 84px; line-height: 1.3;
+    color: #C3392B; text-shadow: 5px 5px 0 rgba(58,43,36,0.16); text-wrap: balance;
+  }
+  .tC .caption {
+    margin-top: 58px; font-family: var(--font-wenkai); font-size: 48px; color: #3A2B24;
+    display: flex; align-items: center; gap: 20px;
+  }
+  .tC .caption::before { content: ""; width: 52px; height: 10px; border-radius: 999px; background: #C3392B; }
+  .tC .stats {
+    position: absolute; left: 92px; right: 92px; bottom: 316px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding-top: 38px; border-top: 1px dashed rgba(58,43,36,0.4);
+  }
+  .tC .stat-label { font-size: 23px; color: rgba(58,43,36,0.6); font-family: var(--font-sub); margin-bottom: 8px; }
+  .tC .stat-num { font-family: var(--font-mono); font-weight: 700; font-size: 80px; color: #C3392B; line-height: 1.1; }
+  .tC .chips .chip.hero { background: rgba(195,57,43,0.12); color: #C3392B; border-radius: 10px; }
+  .tC .chips .chip { background: rgba(58,43,36,0.05); border: 1px solid rgba(58,43,36,0.35); color: #3A2B24; border-radius: 10px; }
+  .tC .chips .chip .win { color: #1F7A5C; }
+  .tC .qr-box { right: 92px; bottom: 92px; }
+  .tC .qr-box .qr-label { color: rgba(58,43,36,0.75); }
+  .tC .footer {
+    position: absolute; left: 92px; bottom: 88px;
+    font-size: 24px; color: rgba(58,43,36,0.65); font-family: var(--font-sub);
+  }
+  .tC .footer .mono { font-family: var(--font-mono); font-weight: 500; }
+
+  /* ============ D 奶油精修（原方向打磨） ============ */
+  .tD { background: #F7F1E3; color: #4A322A; }
+  .tD .top {
+    position: absolute; top: 0; left: 0; right: 0; height: 900px;
+    background: linear-gradient(180deg, #DE8260 0%, #D67F5C 100%);
+  }
+  .tD .top .dots {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(122,69,48,0.35) 2.2px, transparent 2.2px);
+    background-size: 26px 26px; opacity: 0.35;
+    mask-image: linear-gradient(200deg, #000 20%, transparent 75%);
+  }
+  .tD .inner { position: absolute; inset: 0; padding: 118px 92px 0; }
+  .tD .eyebrow {
+    font-family: var(--font-en); font-weight: 700; font-size: 27px; letter-spacing: 4px;
+    color: #F6D488;
+  }
+  .tD .seal {
+    position: absolute; top: 92px; right: 92px; width: 128px; height: 128px;
+    border-radius: 16px; background: #F7F1E3; transform: rotate(-5deg);
+    box-shadow: 0 8px 20px rgba(74,50,42,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-title); font-size: 74px; color: #C8552F;
+  }
+  .tD .copy {
+    margin-top: 112px; max-width: 900px;
+    font-family: var(--font-title); font-weight: 400; font-size: 84px; line-height: 1.26;
+    color: #FFF9EF; text-wrap: balance;
+    text-shadow: 5px 5px 0 #A64B2E;
+  }
+  .tD .caption {
+    margin-top: 58px; display: inline-flex; flex-direction: column; gap: 14px;
+    font-family: var(--font-title); font-size: 46px; color: #FFF9EF;
+  }
+  .tD .caption::after { content: ""; width: 100%; height: 12px; border-radius: 3px; background: #F3CE85; }
+  .tD .stats {
+    position: absolute; left: 92px; right: 92px; bottom: 316px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding-top: 40px; border-top: 1px solid rgba(74,50,42,0.22);
+  }
+  .tD .stat-label { font-size: 23px; color: rgba(74,50,42,0.62); font-family: var(--font-sub); margin-bottom: 8px; }
+  .tD .stat-num { font-family: var(--font-mono); font-weight: 700; font-size: 80px; color: #C8552F; line-height: 1.1; }
+  .tD .chips .chip.hero { background: rgba(214,127,92,0.16); color: #C8552F; border-radius: 12px; }
+  .tD .chips .chip { background: rgba(74,50,42,0.06); border: 1px solid rgba(74,50,42,0.3); color: #4A322A; border-radius: 12px; }
+  .tD .chips .chip .win { color: #1F7A5C; }
+  .tD .qr-box { right: 92px; bottom: 90px; }
+  .tD .qr-box .qr-label { color: rgba(74,50,42,0.72); }
+  .tD .footer {
+    position: absolute; left: 92px; bottom: 86px;
+    font-size: 24px; color: rgba(74,50,42,0.65); font-family: var(--font-sub);
+  }
+  .tD .footer .mono { font-family: var(--font-mono); font-weight: 500; }
+</style>
+</head>
+<body>
+  <div class="page-head">
+    <h1>胜利海报 · 重设计提案 × 4</h1>
+    <p>同一份内容与字体体系（黄油体 / HarmonyOS Sans / JetBrains Mono / Inter），四套气质方向。点击卡片可放大预览；确认方向后再落到 card-renderer 的 canvas 模板实现。</p>
+    <div class="diagnosis">
+      <b>现状诊断：</b>① 奶油字 + 蜜糖阴影落在珊瑚底上对比偏软；② 长文案换行孤字悬挂（「瘩」独行）；③ 主文案与数据区之间留白断层大；④ MVP / 英雄胶囊 / QR 层级接近、缺主角；⑤ 单一陶土色系与「胜利」高唤醒情绪的匹配度可再拉高。
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- ============ A 鎏金暗场 ============ -->
+    <div class="proposal">
+      <div class="card-frame" onclick="this.classList.toggle('zoomed')">
+        <div class="card tA">
+          <div class="bg-glow"></div><div class="court"></div>
+          <div class="inner">
+            <div class="eyebrow">VICTORY · KPL WUYAN</div>
+            <div class="copy">还记得无言关羽开大的那波练后吗，19局78.9%的胜率不是白来的，每次想到那把刀落下来的瞬间都起鸡皮疙瘩</div>
+            <div class="caption">胜利是我们的</div>
+          </div>
+          <div class="seal">胜</div>
+          <div class="stats">
+            <div>
+              <div class="stat-label">当前赛季 MVP 次数</div>
+              <div class="stat-num">2</div>
+            </div>
+            <div>
+              <div class="stat-label">常用英雄</div>
+              <div class="chips">
+                <span class="chip hero">狂铁</span><span class="chip">26局</span><span class="chip mono"><span class="win">胜率69.2%</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="qr-box">
+            <div class="qr-label">扫码接收胜利信号</div>
+            <canvas class="qr" width="150" height="150" data-dark="#14161E"></canvas>
+          </div>
+          <div class="footer"><span class="mono">2026-10-11</span> · KPL无言应援信号站</div>
+        </div>
+      </div>
+      <div class="proposal-meta">
+        <h2>A · 鎏金暗场 <span class="tag">STADIUM GOLD</span></h2>
+        <div class="desc">夜场电竞质感：墨蓝黑底 + 金色渐变大字 + 红印点睛。金梯度文字自带「奖牌感」，阴影压深后大字更跳；数据区一条金色细线收拢，MVP 数字用金色等宽体做主角。适合想强化「胜利荣耀感」的方向。</div>
+        <div class="swatches">
+          <span style="background:#14161E"></span><span style="background:#F4C95D"></span><span style="background:#D99A2B"></span><span style="background:#C8372E"></span><span style="background:#F2E9D8"></span>
+        </div>
+      </div>
+      <div class="hint">点击卡片放大 / 缩小</div>
+    </div>
+
+    <!-- ============ B 号外报纸 ============ -->
+    <div class="proposal">
+      <div class="card-frame" onclick="this.classList.toggle('zoomed')">
+        <div class="card tB">
+          <div class="dots"></div>
+          <div class="inner">
+            <div class="masthead">
+              <div class="mast-line1"><span>VICTORY EXTRA</span><span class="date">2026-10-11</span></div>
+              <div class="mast-line2"><span>KPL 无言应援 · 号外</span><span>第 284 期</span></div>
+            </div>
+            <div class="copy">还记得无言关羽开大的那波练后吗，19局78.9%的胜率不是白来的，每次想到那把刀落下来的瞬间都起鸡皮疙瘩</div>
+            <div class="caption">胜利是我们的</div>
+          </div>
+          <div class="stamp">胜</div>
+          <div class="stats">
+            <div>
+              <div class="stat-label">当前赛季 MVP 次数</div>
+              <div class="stat-num">2</div>
+            </div>
+            <div>
+              <div class="stat-label">常用英雄</div>
+              <div class="chips">
+                <span class="chip hero">狂铁</span><span class="chip">26局</span><span class="chip mono"><span class="win">胜率69.2%</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="qr-box">
+            <div class="qr-label">扫码接收胜利信号</div>
+            <div class="qr-frame"><canvas class="qr" width="130" height="130" data-dark="#211D16"></canvas></div>
+          </div>
+          <div class="footer"><span class="mono">2026-10-11</span> · KPL无言应援信号站</div>
+        </div>
+      </div>
+      <div class="proposal-meta">
+        <h2>B · 号外报纸 <span class="tag">NEWSPRINT</span></h2>
+        <div class="desc">老报纸「号外」的印刷趣味：报头双线 + 期号，墨色大字压红色错版叠印（misprint），「胜」改为红双框印章。信息密度高但有秩序，黑白红三色克制耐看。适合想走复古、有梗、适合截图传播的方向。</div>
+        <div class="swatches">
+          <span style="background:#F6F0E1"></span><span style="background:#211D16"></span><span style="background:#C63A26"></span><span style="background:#1F7A5C"></span>
+        </div>
+      </div>
+      <div class="hint">点击卡片放大 / 缩小</div>
+    </div>
+
+    <!-- ============ C 釉里红 ============ -->
+    <div class="proposal">
+      <div class="card-frame" onclick="this.classList.toggle('zoomed')">
+        <div class="card tC">
+          <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+          <div class="side-strip">无言应援 · 信号站</div>
+          <div class="inner">
+            <div class="eyebrow">VICTORY · KPL WUYAN</div>
+            <div class="copy">还记得无言关羽开大的那波练后吗，19局78.9%的胜率不是白来的，每次想到那把刀落下来的瞬间都起鸡皮疙瘩</div>
+            <div class="caption">胜利是我们的</div>
+          </div>
+          <div class="cseal">胜</div>
+          <div class="stats">
+            <div>
+              <div class="stat-label">当前赛季 MVP 次数</div>
+              <div class="stat-num">2</div>
+            </div>
+            <div>
+              <div class="stat-label">常用英雄</div>
+              <div class="chips">
+                <span class="chip hero">狂铁</span><span class="chip">26局</span><span class="chip mono"><span class="win">胜率69.2%</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="qr-box">
+            <div class="qr-label">扫码接收胜利信号</div>
+            <canvas class="qr" width="150" height="150" data-dark="#3A2B24"></canvas>
+          </div>
+          <div class="footer"><span class="mono">2026-10-11</span> · KPL无言应援信号站</div>
+        </div>
+      </div>
+      <div class="proposal-meta">
+        <h2>C · 釉里红 <span class="tag">VERMILLION</span></h2>
+        <div class="desc">国风印章路线：宣纸米底 + 釉里红大字 + 圆形朱印，四角印刷角线 + 右侧竖排「无言应援」侧栏，标语用霞鹜文楷手写感收尾。红字配墨色投影，胜利的「喜」与电竞的「燃」都在。适合想强化品牌记忆点的方向。</div>
+        <div class="swatches">
+          <span style="background:#F5EDDC"></span><span style="background:#C3392B"></span><span style="background:#3A2B24"></span><span style="background:#1F7A5C"></span>
+        </div>
+      </div>
+      <div class="hint">点击卡片放大 / 缩小</div>
+    </div>
+
+    <!-- ============ D 奶油精修 ============ -->
+    <div class="proposal">
+      <div class="card-frame" onclick="this.classList.toggle('zoomed')">
+        <div class="card tD">
+          <div class="top"><div class="dots"></div></div>
+          <div class="inner">
+            <div class="eyebrow">VICTORY · KPL WUYAN</div>
+            <div class="copy">还记得无言关羽开大的那波练后吗，19局78.9%的胜率不是白来的，每次想到那把刀落下来的瞬间都起鸡皮疙瘩</div>
+            <div class="caption">胜利是我们的</div>
+          </div>
+          <div class="seal">胜</div>
+          <div class="stats">
+            <div>
+              <div class="stat-label">当前赛季 MVP 次数</div>
+              <div class="stat-num">2</div>
+            </div>
+            <div>
+              <div class="stat-label">常用英雄</div>
+              <div class="chips">
+                <span class="chip hero">狂铁</span><span class="chip">26局</span><span class="chip mono"><span class="win">胜率69.2%</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="qr-box">
+            <div class="qr-label">扫码接收胜利信号</div>
+            <canvas class="qr" width="150" height="150" data-dark="#4A322A"></canvas>
+          </div>
+          <div class="footer"><span class="mono">2026-10-11</span> · KPL无言应援信号站</div>
+        </div>
+      </div>
+      <div class="proposal-meta">
+        <h2>D · 奶油精修 <span class="tag">CREAM REFINE</span></h2>
+        <div class="desc">保留陶土×奶油的既有基因，只修问题：珊瑚底加深一档提对比；阴影从蜜糖色换成深陶 #A64B2E，大字更实；网点改斜向渐隐、更克制；数据区加细线收拢、MVP 数字转珊瑚红做主角；文案 text-wrap: balance 消除孤字。改动最小、风险最低。</div>
+        <div class="swatches">
+          <span style="background:#D67F5C"></span><span style="background:#A64B2E"></span><span style="background:#FFF9EF"></span><span style="background:#F3CE85"></span><span style="background:#4A322A"></span>
+        </div>
+      </div>
+      <div class="hint">点击卡片放大 / 缩小</div>
+    </div>
+  </div>
+
+<script>
+  // 伪二维码占位（确定性随机，仅预览用；实际实现仍走 qrcode 库真码）
+  document.querySelectorAll('canvas.qr').forEach((cv, idx) => {
+    const ctx = cv.getContext('2d');
+    const dark = cv.dataset.dark || '#222';
+    const n = 21, cell = Math.floor(cv.width / n);
+    let seed = 42 + idx * 7;
+    const rand = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.fillStyle = dark;
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (rand() > 0.52) ctx.fillRect(x * cell, y * cell, cell, cell);
+    const finder = (fx, fy) => {
+      ctx.fillStyle = '#FFFFFF'; ctx.fillRect(fx * cell, fy * cell, cell * 7, cell * 7);
+      ctx.fillStyle = dark; ctx.fillRect(fx * cell, fy * cell, cell * 7, cell);
+      ctx.fillRect(fx * cell, (fy + 6) * cell, cell * 7, cell);
+      ctx.fillRect(fx * cell, fy * cell, cell, cell * 7);
+      ctx.fillRect((fx + 6) * cell, fy * cell, cell, cell * 7);
+      ctx.fillRect((fx + 2) * cell, (fy + 2) * cell, cell * 3, cell * 3);
+    };
+    finder(0, 0); finder(n - 7, 0); finder(0, n - 7);
+  });
+</script>
+</body>
+</html>
