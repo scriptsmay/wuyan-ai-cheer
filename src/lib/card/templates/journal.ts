@@ -30,33 +30,15 @@ const INK_FAINT = '#8A8275'; // 更淡墨 · 注释
 const CINNABAR = '#9E3B2E'; // 朱砂 · 印章强调 6.6:1
 const DAIQING = '#3D5A56'; // 黛青 · 远山
 const ZHESHI = '#8A5A3B'; // 赭石 · 回纹 5.2:1
-const ZHUQING = '#6E7F63'; // 竹青 · 仅装饰线
 const LINE = '#C9C1B2';
 const LINE_SOFT = '#DED7C8';
 
-const TITLES = ['春深不见底', '稳字当头', '今日仍有光', '一局一春天', '慢慢也算数', '无声处有雷'];
 const MARKS = ['无言应援', '对抗路一阵', 'KPL'];
 const VERTICAL_TEXT = '于无声处听惊雷';
 
 const CARD = { x: 120, y: 236, w: 800, h: 864 };
 const STRIP_X = 1000;
 const PAD = 48;
-const CN_DIGITS = '〇一二三四五六七八九';
-
-/** 阿拉伯数字 → 中文数字（「第二百九十三则」这类国风题识） */
-function cnNumber(value: number): string {
-  if (value < 10) return CN_DIGITS[value] ?? '〇';
-  if (value < 20) return `十${value % 10 ? CN_DIGITS[value % 10] : ''}`;
-  if (value < 100) {
-    const tens = Math.floor(value / 10);
-    const ones = value % 10;
-    return `${CN_DIGITS[tens]}十${ones ? CN_DIGITS[ones] : ''}`;
-  }
-  const hundreds = Math.floor(value / 100);
-  const rest = value % 100;
-  if (rest === 0) return `${CN_DIGITS[hundreds]}百`;
-  return `${CN_DIGITS[hundreds]}百${rest < 10 ? `零${CN_DIGITS[rest]}` : cnNumber(rest)}`;
-}
 
 /** 回纹带：页眉下缘 / 页脚上缘各一条，方折螺旋通栏 + 基线 */
 function drawFretBand(
@@ -291,15 +273,6 @@ async function draw(ctx: TemplateContext): Promise<void> {
     `500 20px ${FAMILY_MONO}`,
     INK_FAINT
   );
-  await drawText(
-    context,
-    `第${cnNumber(issue)}则`,
-    960,
-    106,
-    `400 26px ${FAMILY_WENKAI}`,
-    INK_SOFT,
-    'right'
-  );
   drawFretBand(context, 80, 168, 920, ZHESHI, 0.55);
 
   /* ---------- 朱丝栏 + 竖排题字 ---------- */
@@ -350,7 +323,6 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   // 眉题
   await drawText(context, '手录 · 无言应援札记', textX, CARD.y + 60, `400 26px ${FAMILY_WENKAI}`, INK_SOFT);
-  await drawText(context, '春日特辑', textRight, CARD.y + 60, `400 24px ${FAMILY_WENKAI}`, INK_FAINT, 'right');
   context.save();
   context.strokeStyle = LINE;
   context.lineWidth = 1;
@@ -360,18 +332,8 @@ async function draw(ctx: TemplateContext): Promise<void> {
   context.stroke();
   context.restore();
 
-  // 标题 + 朱砂/竹青短线（国风「句读」；竹青仅作装饰线，不写正文）
-  const title = rng.pick(TITLES);
-  await drawText(context, title, textX, CARD.y + 152, `500 56px ${FAMILY_WENKAI}`, INK);
-  context.save();
-  context.fillStyle = CINNABAR;
-  context.fillRect(textX, CARD.y + 170, 104, 4);
-  context.fillStyle = ZHUQING;
-  context.fillRect(textX + 112, CARD.y + 170, 32, 4);
-  context.restore();
-
   /* ---------- 正文 + 引用块 + 题识 + 方章 ---------- */
-  const copyTop = CARD.y + 248;
+  const copyTop = CARD.y + 168;
   const captionGap = 52;
   const markGap = 34;
   const markHeight = 40;
