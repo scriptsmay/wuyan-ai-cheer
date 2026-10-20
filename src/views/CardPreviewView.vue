@@ -57,7 +57,7 @@ const ALL_CASES: CaseDef[] = [
   },
   {
     key: 'journal',
-    label: 'journal · 文艺札记（daily 小红书风）',
+    label: 'journal · 国风札记（daily）',
     templateId: 'journal',
     mood: 'daily',
     appearance: 'light',
