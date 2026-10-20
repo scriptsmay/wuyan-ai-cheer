@@ -472,16 +472,17 @@ async function draw(ctx: TemplateContext): Promise<void> {
       await drawText(
         context,
         ref.hero ? heroEyebrowOf(ref) : ref.label,
-        x + 34,
-        y + 44,
+        x + slipW / 2,
+        y + 40,
         `400 25px ${FAMILY_WENKAI}`,
-        INK_SOFT
+        INK_SOFT,
+        'center'
       );
       if (ref.hero) {
         await drawHeroChips(
           context,
           ref.hero,
-          { x: x + 28, y: y + 26, w: slipW - 56, h: 72 },
+          { x: x + 16, y: y + 46, w: slipW - 32, h: 54 },
           {
             nameSize: 30,
             metaSize: 20,
@@ -493,16 +494,18 @@ async function draw(ctx: TemplateContext): Promise<void> {
             highColor: DAIQING,
             nameFamily: FAMILY_WENKAI,
             radiusRatio: 0.12,
+            align: 'center',
           }
         );
       } else {
         await drawText(
           context,
           ref.value,
-          x + 34,
+          x + slipW / 2,
           y + 94,
           `700 44px ${FAMILY_MONO}`,
-          i === 0 ? CINNABAR : INK
+          i === 0 ? CINNABAR : INK,
+          'center'
         );
       }
     }

@@ -441,8 +441,8 @@ export interface HeroChipsStyle {
   nameFamily?: string;
   /** 圆角 / 高度比：0.5 为全圆胶囊（缺省），方角版式给 0.14 */
   radiusRatio?: number;
-  /** 'right' 时 box.x 当作右边界，整组向左生长（便签卡右对齐数值列用） */
-  align?: 'left' | 'right';
+  /** 'right' 时 box.x 当作右边界，整组向左生长；'center' 时按 box.w 居中（国风笺格用） */
+  align?: 'left' | 'right' | 'center';
 }
 
 interface HeroChip {
@@ -608,7 +608,13 @@ function paintChips(
   context.textBaseline = 'middle';
   for (const row of rows) {
     const rowH = Math.max(...row.map((chip) => chip.h));
-    let cursor = style.align === 'right' ? box.x - rowWidth(row, gap) : box.x;
+    const rowW = rowWidth(row, gap);
+    let cursor =
+      style.align === 'right'
+        ? box.x - rowW
+        : style.align === 'center'
+          ? box.x + (box.w - rowW) / 2
+          : box.x;
     for (const chip of row) {
       // 同行胶囊统一取本行最高者的框高：字号保留层级，上下沿对齐，
       // 否则小胶囊会短一截、文字还落在框外偏下，排出来是「从高到低」的锯齿
