@@ -1,5 +1,5 @@
 import type { CardTemplate, TemplateContext } from '../types';
-import { heroEyebrowOf, selectVisibleRefs } from '../selection';
+import { CARD_STAT_COUNT, heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   FAMILY_BODY,
   FAMILY_WENKAI,
@@ -125,9 +125,9 @@ async function draw(ctx: TemplateContext): Promise<void> {
     context.moveTo(110, 1074);
     context.lineTo(970, 1074);
     context.stroke();
-    const visible = selectVisibleRefs(input.refs, rng, 2);
+    const visible = selectVisibleRefs(input.refs, rng, CARD_STAT_COUNT);
     for (const [i, ref] of visible.entries()) {
-      const x = 110 + i * 450;
+      const x = 110 + i * 294;
       await drawText(
         context,
         (ref.hero ? heroEyebrowOf(ref) : ref.label).toUpperCase(),
@@ -140,7 +140,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
         await drawHeroChips(
           context,
           ref.hero,
-          { x, y: 1144, w: i === 0 ? 420 : 400, h: 78 },
+          { x, y: 1144, w: 272, h: 78 },
           {
             nameSize: 30,
             metaSize: 20,

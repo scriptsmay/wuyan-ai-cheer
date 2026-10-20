@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { renderCheerCard, type CardInput, type RenderedCard } from '../lib/card-renderer';
+import { CARD_STAT_COUNT, mergeCardRefs } from '../lib/card/selection';
 import { generateCheer } from '../lib/api';
-import type { Checkin, CheerRef, Mood } from '../types';
+import type { AbilitiesDisplay, Checkin, CheerRef, Mood } from '../types';
 
 /* 仅 dev 构建可用的模板预览页（路由在 router.ts 中按 import.meta.env.DEV 注册） */
 
@@ -110,11 +111,37 @@ const DEFAULT_REFS: CheerRef[] = [
   },
 ];
 
+// 后端 abilities_display 的实测样例：联盟综合评分 + 对抗路分榜前十
+const DEFAULT_ABILITIES: AbilitiesDisplay = {
+  score: 93.7,
+  overall_rank: 1,
+  position: '对抗路',
+  position_rank: 1,
+  fields: [
+    { key: 'support_ability', label: '支援能力', score: 97, rank: 1 },
+    { key: 'initiation', label: '开团能力', score: 94, rank: 1 },
+    { key: 'map_control', label: '场面控制', score: 90, rank: 1 },
+    { key: 'early_game', label: '前期表现', score: 88, rank: 1 },
+    { key: 'late_game', label: '后期表现', score: 93, rank: 2 },
+    { key: 'teamfight', label: '团战能力', score: 90, rank: 2 },
+    { key: 'invasion_ability', label: '入侵能力', score: 86, rank: 2 },
+    { key: 'durability', label: '生存能力', score: 72, rank: 2 },
+    { key: 'damage_output', label: '输出能力', score: 93, rank: 3 },
+    { key: 'economy', label: '经济发育', score: 86, rank: 3 },
+  ],
+};
+
+const DEFAULT_SOURCE = '默认对抗路英雄池 + 能力分榜';
+
 // 响应式数据源与控制
 const activeRefs = ref<CheerRef[]>([...DEFAULT_REFS]);
+const activeAbilities = ref<AbilitiesDisplay | null>(DEFAULT_ABILITIES);
 const activeSnapshotAt = ref<string>('');
 const dataSourceStatus = ref<'default' | 'online_overview' | 'ai_generated'>('default');
-const dataSourceDetail = ref<string>('默认对抗路英雄池');
+const dataSourceDetail = ref<string>(DEFAULT_SOURCE);
+
+/** 卡片真实候选池：结构化能力在前，赛季统计/英雄在后，供模板抽 3 项 */
+const mergedRefs = computed(() => mergeCardRefs(activeRefs.value, activeAbilities.value));
 
 // 线上 AI 生成状态
 const isGeneratingAi = ref(false);
@@ -149,6 +176,7 @@ async function renderCase(c: CaseDef, index: number = 0): Promise<void> {
       line: getLineForCase(c.key, index),
       emojiCaption: aiCaption.value || CAPTIONS[c.key] || '',
       refs: activeRefs.value,
+      abilitiesDisplay: activeAbilities.value,
       sourceSnapshotAt: activeSnapshotAt.value,
       showQr: true,
       showRefs: true,
@@ -208,9 +236,10 @@ async function fetchOnlineOverview(): Promise<boolean> {
     if (heroStr) newRefs.push({ label: '常用英雄（按出场数）', value: heroStr, source: 'season_summaries' });
 
     activeRefs.value = newRefs;
+    activeAbilities.value = DEFAULT_ABILITIES;
     activeSnapshotAt.value = json.data?.updated_at || '';
     dataSourceStatus.value = 'online_overview';
-    dataSourceDetail.value = `线上 KPL 数据（${json.data?.season || '当前赛季'}）`;
+    dataSourceDetail.value = `线上 KPL 数据（${json.data?.season || '当前赛季'}）+ 能力分榜样例`;
     return true;
   } catch (err) {
     console.warn('[preview] 获取线上概览失败，使用对抗路兜底数据', err);
@@ -233,9 +262,10 @@ async function triggerAiCheer(): Promise<void> {
       if (Array.isArray(result.refs) && result.refs.length > 0) {
         activeRefs.value = result.refs;
       }
+      activeAbilities.value = result.abilities_display ?? null;
       activeSnapshotAt.value = result.source_snapshot_at || '';
       dataSourceStatus.value = 'ai_generated';
-      dataSourceDetail.value = `线上 AI 生成（${result.report_id.slice(0, 8)}…）`;
+      dataSourceDetail.value = `线上 AI 生成（${result.report_id.slice(0, 8)}…${activeAbilities.value ? ' · 含能力分榜' : ' · 无能力分榜'}）`;
       await renderAll();
     }
   } catch (err) {
@@ -249,13 +279,18 @@ async function triggerAiCheer(): Promise<void> {
 /** 恢复默认对抗路兜底数据 */
 async function resetToDefault(): Promise<void> {
   activeRefs.value = [...DEFAULT_REFS];
+  activeAbilities.value = DEFAULT_ABILITIES;
   activeSnapshotAt.value = '';
   aiLines.value = [];
   aiCaption.value = '';
   selectedAiLineIndex.value = -1;
   dataSourceStatus.value = 'default';
-  dataSourceDetail.value = '默认对抗路英雄池';
+  dataSourceDetail.value = DEFAULT_SOURCE;
   await renderAll();
+}
+
+function formatScore(score: number): string {
+  return Number.isInteger(score) ? String(score) : score.toFixed(1);
 }
 
 /** 切换选中的特定 AI 文案 */
@@ -361,10 +396,29 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- 当前卡片引用的战绩/赛事依据展示折叠条 -->
+    <!-- 结构化能力数据校验条：完整分数与名次集中这里，卡面能力项带名次后缀 -->
+    <div v-if="activeAbilities" class="abilities-bar">
+      <span class="refs-title">能力分榜：</span>
+      <span class="ability-summary">
+        {{ activeAbilities.position || '' }}综合评分 <strong>{{ formatScore(activeAbilities.score) }}</strong>
+        <template v-if="activeAbilities.overall_rank"> · 全联盟第{{ activeAbilities.overall_rank }}</template>
+        <template v-if="activeAbilities.position_rank"> · 同位置第{{ activeAbilities.position_rank }}</template>
+      </span>
+      <span v-for="field in activeAbilities.fields" :key="field.key" class="ref-badge ability-badge">
+        {{ field.label }} <strong>{{ formatScore(field.score) }}</strong>
+        <em>第{{ field.rank }}</em>
+      </span>
+    </div>
+
+    <!-- 卡片真实候选池（结构化能力 + 赛季统计 + 英雄），模板从池中抽 3 项 -->
     <div class="refs-preview-bar">
-      <span class="refs-title">卡片依据 (Refs)：</span>
-      <span v-for="(refItem, rIdx) in activeRefs" :key="rIdx" class="ref-badge">
+      <span class="refs-title">候选池 {{ mergedRefs.length }} 项（每卡抽 {{ CARD_STAT_COUNT }}）：</span>
+      <span
+        v-for="(refItem, rIdx) in mergedRefs"
+        :key="rIdx"
+        class="ref-badge"
+        :class="{ ability: refItem.source === 'abilities_display' }"
+      >
         <strong>{{ refItem.label }}:</strong> {{ refItem.value }}
       </span>
     </div>
@@ -573,6 +627,37 @@ onMounted(async () => {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.abilities-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.22);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.ability-summary {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.ability-summary strong {
+  color: #6366f1;
+  font-size: 13px;
+}
+.ability-badge {
+  background: rgba(99, 102, 241, 0.1);
+}
+.ability-badge strong {
+  color: var(--text);
+}
+.ability-badge em {
+  font-style: normal;
+  opacity: 0.7;
+}
 .refs-preview-bar {
   display: flex;
   align-items: center;
@@ -596,6 +681,9 @@ onMounted(async () => {
   background: rgba(125, 125, 125, 0.06);
   border-radius: 4px;
   flex-shrink: 0;
+}
+.ref-badge.ability {
+  background: rgba(99, 102, 241, 0.08);
 }
 .preview-grid {
   display: grid;

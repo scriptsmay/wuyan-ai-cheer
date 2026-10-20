@@ -1,5 +1,5 @@
 import { createRng } from './rng';
-import { buildSeed, resolveTemplateId, type CardAppearance } from './selection';
+import { buildSeed, mergeCardRefs, resolveTemplateId, type CardAppearance } from './selection';
 import { CARD_HEIGHT, CARD_WIDTH, formatDate, resolveTheme } from './shared';
 import { TEMPLATES } from './templates';
 import type { CardInput, RenderedCard, TemplateContext } from './types';
@@ -35,7 +35,11 @@ export async function renderCheerCard(input: CardInput): Promise<RenderedCard> {
 
   const theme = resolveTheme(input.mood, appearance);
   const rng = createRng(`${buildSeed(selection)}|${templateId}`);
-  const templateContext: TemplateContext = { ctx: context, input, rng, theme, dateLabel };
+  const templateInput: CardInput = {
+    ...input,
+    refs: mergeCardRefs(input.refs, input.abilitiesDisplay),
+  };
+  const templateContext: TemplateContext = { ctx: context, input: templateInput, rng, theme, dateLabel };
 
   await template.draw(templateContext);
 

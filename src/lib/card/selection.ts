@@ -1,4 +1,4 @@
-import type { Mood, CheerRef, HeroStat } from '../../types';
+import type { AbilitiesDisplay, Mood, CheerRef, HeroStat } from '../../types';
 import { createRng, hashString, type CardRng } from './rng';
 
 export type TemplateId =
@@ -164,6 +164,12 @@ function hasUnbalancedParen(part: string): boolean {
 function splitHeroRefs(refs: readonly CheerRef[]): CheerRef[] {
   const out: CheerRef[] = [];
   for (const ref of refs) {
+    // 「支援97、开团94」这类能力串也是顿号分隔，但拆出来的不是英雄名；
+    // 只有 label 明说是英雄的合并字段才做拆分。
+    if (!/英雄/.test(ref.label)) {
+      out.push(ref);
+      continue;
+    }
     const parts = ref.value.split('、');
     const heroes = parts.some(hasUnbalancedParen)
       ? []
@@ -178,6 +184,71 @@ function splitHeroRefs(refs: readonly CheerRef[]): CheerRef[] {
     for (const hero of heroes) out.push({ ...ref, value: hero.name, hero });
   }
   return out;
+}
+
+/**
+ * 卡片每屏展示的数据条目数：能力数据接入后候选池从 ~8 条扩到 ~20 条，
+ * 两栏既浪费候选也体现不出新增字段，统一升到三项。
+ */
+export const CARD_STAT_COUNT = 3;
+
+/** 旧版 refs 里的能力合并文案（如「对抗路分榜第1能力」「联盟综合评分」），有结构化数据时去重 */
+const LEGACY_ABILITY_LABEL = /综合评分|分榜.*能力/;
+
+function formatAbilityScore(score: number): string {
+  return Number.isInteger(score) ? String(score) : score.toFixed(1);
+}
+
+/**
+ * rank 显示在括号里，比如：(1st)
+ * @param rank 排名
+ * @returns
+ */
+function formatAbilityRank(rank: number | null | undefined): string {
+  if (!Number.isFinite(rank)) return '';
+  const suffix = rank === 1 ? 'st' : rank === 2 ? 'nd' : rank === 3 ? 'rd' : 'th';
+  return `(${rank}${suffix})`;
+}
+
+/**
+ * 把结构化 abilities_display 摊平成普通候选条目：一条综合评分 + 各分榜能力。
+ * 分榜能力带名次后缀（如 97(1st)），标签保持短词，避免窄栏被名次文案撑爆。
+ */
+export function buildAbilityRefs(abilities: AbilitiesDisplay | null | undefined): CheerRef[] {
+  if (!abilities) return [];
+  const refs: CheerRef[] = [];
+  if (Number.isFinite(abilities.score)) {
+    refs.push({ label: '联盟综合评分', value: formatAbilityScore(abilities.score), source: 'abilities_display' });
+  }
+  for (const field of abilities.fields ?? []) {
+    if (!field?.label || !Number.isFinite(field.score)) continue;
+    // rank 显示在括号里，比如： 98(1st)
+    const ref: CheerRef = {
+      label: field.label,
+      value: formatAbilityScore(field.score) + formatAbilityRank(field.rank),
+      source: 'abilities_display',
+    };
+    if (Number.isFinite(field.rank)) ref.abilityRank = field.rank;
+    refs.push(ref);
+  }
+  return refs;
+}
+
+/**
+ * 合并卡片候选池：结构化能力排在前面，旧能力合并文案与重名条目剔除，
+ * 赛季统计和英雄条目原样保留。无结构化数据时不动 refs，兼容旧响应。
+ */
+export function mergeCardRefs(
+  refs: readonly CheerRef[] | undefined,
+  abilities: AbilitiesDisplay | null | undefined
+): CheerRef[] {
+  const abilityRefs = buildAbilityRefs(abilities);
+  if (!abilityRefs.length) return [...(refs ?? [])];
+  const abilityLabels = new Set(abilityRefs.map((ref) => ref.label));
+  return [
+    ...abilityRefs,
+    ...(refs ?? []).filter((ref) => !LEGACY_ABILITY_LABEL.test(ref.label) && !abilityLabels.has(ref.label)),
+  ];
 }
 
 /**
@@ -217,6 +288,16 @@ function pickDistinct<T>(pool: readonly T[], count: number, rng: CardRng | undef
 const HIDDEN_METRIC_LABEL = /对局数|总局数|场次/;
 
 /**
+ * 能力分项优先抽第 1 名：池里存在 rank=1 的条目时，rank 2/3 不进入本次抽取；
+ * 完全没有 rank=1 时才回退到含 2/3 名的完整候选池。综合评分等无 rank 的条目不受影响。
+ */
+function preferTopRanked(pool: readonly CheerRef[]): CheerRef[] {
+  const hasTopRank = pool.some((ref) => ref.abilityRank === 1);
+  if (!hasTopRank) return [...pool];
+  return pool.filter((ref) => ref.abilityRank === undefined || ref.abilityRank === 1);
+}
+
+/**
  * 从可用 refs 池中确定性选取展示项（支持 PRNG 轮换）
  * 规则：
  * 0. 先剔除场次类条目（见 HIDDEN_METRIC_LABEL）；
@@ -227,6 +308,7 @@ const HIDDEN_METRIC_LABEL = /对局数|总局数|场次/;
  *    - 过滤出适合双列窄卡排版的指标（默认 value 长度 <= 10），避免超长文案爆框；
  *      英雄条目拆分后 value 只剩英雄名，天然通过此过滤；
  *    - 若过滤后候选项不足 count，回落使用全部条目；
+ *    - 能力分项优先使用 rank=1 的条目（见 preferTopRanked）；
  *    - 按 label 分组去重后随机抽样，保证同 seed 稳定、不重复、且一次只上一个英雄。
  */
 export function selectVisibleRefs(
@@ -243,5 +325,5 @@ export function selectVisibleRefs(
   const candidatePool = expanded.filter((r) => r.value.length <= maxValueLength);
   const pool = candidatePool.length >= count ? candidatePool : [...expanded];
 
-  return pickDistinct(pool, count, rng, (ref) => ref.label);
+  return pickDistinct(preferTopRanked(pool), count, rng, (ref) => ref.label);
 }

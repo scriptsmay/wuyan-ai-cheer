@@ -1,5 +1,5 @@
 import type { CardTemplate, TemplateContext } from '../types';
-import { heroEyebrowOf, selectVisibleRefs } from '../selection';
+import { CARD_STAT_COUNT, heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   CARD_HEIGHT,
   CARD_WIDTH,
@@ -97,7 +97,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
   // 中缝右侧彩纸：填住主文案与数据块之间的留白，且始终避开文案与标语的可达范围
   paperBlock(context, rng, 660, 792, 300, 132, pastelAlt);
   // 数据块底下的垫纸：刻意让彩纸四周露出一圈撕边
-  paperBlock(context, rng, 64, 1008, 400, 196, pastel);
+  paperBlock(context, rng, 64, 1008, 920, 200, pastel);
   drawTape(context, rng, 700, 178, 150, 44, 'rgba(255,255,255,0.72)');
   drawTape(context, rng, 700, 800, 92, 30, 'rgba(255,255,255,0.66)');
   drawGrain(context, rng, { density: 1200, alpha: 0.04, colors: ['#8a7f6a', ink] });
@@ -170,11 +170,11 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   // 数据剪贴块
   if (input.showRefs !== false && input.refs.length) {
-    const visible = selectVisibleRefs(input.refs, rng, 2);
+    const visible = selectVisibleRefs(input.refs, rng, CARD_STAT_COUNT);
     for (const [i, ref] of visible.entries()) {
-      const x = 92 + i * 464;
+      const x = 92 + i * 306;
       const y = 1040;
-      const w = 432;
+      const w = 282;
       const h = 148;
       context.save();
       context.fillStyle = 'rgba(255,255,255,0.75)';
@@ -185,8 +185,8 @@ async function draw(ctx: TemplateContext): Promise<void> {
       await drawText(
         context,
         ref.hero ? heroEyebrowOf(ref) : ref.label,
-        x + 28,
-        y + 54,
+        x + 24,
+        y + 46,
         `400 24px ${FAMILY_BODY}`,
         SOFT
       );
@@ -194,7 +194,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
         await drawHeroChips(
           context,
           ref.hero,
-          { x: x + 28, y: y + 68, w: w - 56, h: 64 },
+          { x: x + 24, y: y + 60, w: w - 48, h: 72 },
           {
             nameSize: 30,
             metaSize: 21,
@@ -209,11 +209,11 @@ async function draw(ctx: TemplateContext): Promise<void> {
         );
         continue;
       }
-      const valueFont = `700 52px "JetBrains Mono", "Noto Sans SC", monospace`;
+      const valueFont = `700 48px "JetBrains Mono", "Noto Sans SC", monospace`;
       context.font = valueFont;
       await document.fonts.load(valueFont, ref.value);
       context.fillStyle = i === 0 ? ink : INK;
-      context.fillText(ref.value, x + 28, y + 116);
+      context.fillText(ref.value, x + 24, y + 114);
     }
   }
 

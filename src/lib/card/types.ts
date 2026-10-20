@@ -1,4 +1,4 @@
-import type { CheerRef, Checkin, Mood } from '../../types';
+import type { AbilitiesDisplay, CheerRef, Checkin, Mood } from '../../types';
 import type { CardRng } from './rng';
 import type { CardAppearance, TemplateId } from './selection';
 /**
@@ -19,6 +19,8 @@ export interface CardInput {
   line: string;
   emojiCaption: string;
   refs: CheerRef[];
+  /** 结构化能力数据，渲染前会转换成与 refs 同池的候选条目 */
+  abilitiesDisplay?: AbilitiesDisplay | null;
   sourceSnapshotAt: string;
   checkin?: Checkin;
   showQr?: boolean;

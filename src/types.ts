@@ -17,6 +17,25 @@ export interface CheerRef {
   source: string;
   /** 仅英雄类条目携带；卡片据此改走「名字 + 局数 + 胜率」胶囊渲染，而非普通指标 */
   hero?: HeroStat;
+  /** 能力分项的联盟名次；卡片据此优先抽取第 1 名，2/3 名只在前者缺席时兜底 */
+  abilityRank?: number;
+}
+
+/** KPL 能力分榜的单项条目，后端只下发全联盟第 1~3 名 */
+export interface AbilityField {
+  key: string;
+  label: string;
+  score: number;
+  rank: number;
+}
+
+/** 后端结构化的能力数据，替代 refs 里「对抗路分榜第1能力」这类合并长文本 */
+export interface AbilitiesDisplay {
+  score: number;
+  overall_rank: number | null;
+  position: string | null;
+  position_rank: number | null;
+  fields: AbilityField[];
 }
 
 export interface CheerResult {
@@ -25,6 +44,7 @@ export interface CheerResult {
   report_id: string;
   refs: CheerRef[];
   source_snapshot_at: string;
+  abilities_display?: AbilitiesDisplay | null;
 }
 
 export interface Checkin {

@@ -1,5 +1,5 @@
 import type { CardTemplate, TemplateContext } from '../types';
-import { heroEyebrowOf, selectVisibleRefs } from '../selection';
+import { CARD_STAT_COUNT, heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   FAMILY_BODY,
   FAMILY_ENGLISH,
@@ -141,7 +141,7 @@ async function drawStats(ctx: TemplateContext, y: number): Promise<void> {
   context.stroke();
   context.restore();
 
-  const visible = input.showRefs === false ? [] : selectVisibleRefs(input.refs, ctx.rng, 2);
+  const visible = input.showRefs === false ? [] : selectVisibleRefs(input.refs, ctx.rng, CARD_STAT_COUNT);
   if (!visible.length) {
     // 无数据：三色装饰条
     const colors = [VERMILLION, INK, WIN_HIGH];
@@ -157,47 +157,40 @@ async function drawStats(ctx: TemplateContext, y: number): Promise<void> {
     return;
   }
 
-  // 左：第一项（通常为 MVP 次数）大字等宽
-  const left_ = visible[0]!;
-  await drawText(context, heroEyebrowOf(left_), left, y - 46, `500 23px ${FAMILY_SUBTITLE}`, 'rgba(58,43,36,0.6)');
-  if (left_.hero) {
-    await drawHeroChips(context, left_.hero, { x: left, y: y - 14, w: 400, h: 96 }, heroChipStyle());
-  } else {
-    const valueFont = `700 80px ${FAMILY_MONO}`;
-    context.font = valueFont;
-    await document.fonts.load(valueFont, left_.value);
-    context.fillStyle = VERMILLION;
-    context.textBaseline = 'alphabetic';
-    context.fillText(left_.value, left, y + 24);
+  // 列距 306，带名次后缀的值（如 90(2nd)）等宽字下偏宽，上限 64px 并按 250px 列宽统一缩放
+  const VALUE_MAX_SIZE = 64;
+  const VALUE_MAX_WIDTH = 250;
+  const valueFont = (size: number) => `700 ${size}px ${FAMILY_MONO}`;
+  const plain = visible.filter((ref) => !ref.hero);
+  await Promise.all(plain.map((ref) => document.fonts.load(valueFont(VALUE_MAX_SIZE), ref.value)));
+  let valueSize = VALUE_MAX_SIZE;
+  for (const ref of plain) {
+    context.font = valueFont(VALUE_MAX_SIZE);
+    const width = context.measureText(ref.value).width;
+    if (width > VALUE_MAX_WIDTH) {
+      valueSize = Math.min(valueSize, Math.floor((VALUE_MAX_SIZE * VALUE_MAX_WIDTH) / width));
+    }
   }
 
-  // 右：第二项（通常为常用英雄）右对齐英雄胶囊
-  const right_ = visible[1];
-  if (right_?.hero) {
-    await drawHeroChips(
-      context,
-      right_.hero,
-      { x: right, y: y - 14, w: 400, h: 96 },
-      { ...heroChipStyle(), align: 'right' }
-    );
-  } else if (right_) {
+  for (const [i, ref] of visible.entries()) {
+    const x = left + i * 306;
     await drawText(
       context,
-      heroEyebrowOf(right_),
-      right,
+      ref.hero ? heroEyebrowOf(ref) : ref.label,
+      x,
       y - 46,
       `500 23px ${FAMILY_SUBTITLE}`,
-      'rgba(58,43,36,0.6)',
-      'right'
+      'rgba(58,43,36,0.6)'
     );
-    const valueFont = `700 80px ${FAMILY_MONO}`;
-    context.font = valueFont;
-    await document.fonts.load(valueFont, right_.value);
-    context.fillStyle = VERMILLION;
-    context.textAlign = 'right';
+    if (ref.hero) {
+      await drawHeroChips(context, ref.hero, { x, y: y - 14, w: 282, h: 96 }, heroChipStyle());
+      continue;
+    }
+    context.font = valueFont(valueSize);
+    await document.fonts.load(context.font, ref.value);
+    context.fillStyle = i === 0 ? VERMILLION : INK;
     context.textBaseline = 'alphabetic';
-    context.fillText(right_.value, right, y + 24);
-    context.textAlign = 'left';
+    context.fillText(ref.value, x, y + 24);
   }
 }
 

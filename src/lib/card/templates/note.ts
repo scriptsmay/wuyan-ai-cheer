@@ -1,5 +1,5 @@
 import type { CardTemplate, TemplateContext } from '../types';
-import { heroEyebrowOf, selectVisibleRefs } from '../selection';
+import { CARD_STAT_COUNT, heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   FAMILY_TITLE,
   FAMILY_WENKAI,
@@ -227,7 +227,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
   if (input.showRefs !== false && input.refs.length) {
     const listTop = 1120;
     await drawText(context, '—— 今日小记 ——', 100, listTop - 24, `400 28px ${FAMILY_WENKAI}`, INK_SOFT);
-    const visible = selectVisibleRefs(input.refs, rng, 2);
+    const visible = selectVisibleRefs(input.refs, rng, CARD_STAT_COUNT);
     for (const [i, ref] of visible.entries()) {
       const rowY = listTop + 46 + i * 78;
       await drawText(context, ref.hero ? heroEyebrowOf(ref) : ref.label, 104, rowY, `400 32px ${FAMILY_WENKAI}`, INK);

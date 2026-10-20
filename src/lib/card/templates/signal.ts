@@ -1,5 +1,5 @@
 import type { CardTemplate, TemplateContext } from '../types';
-import { heroEyebrowOf, selectVisibleRefs } from '../selection';
+import { CARD_STAT_COUNT, heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   CARD_HEIGHT,
   FAMILY_SUBTITLE,
@@ -201,7 +201,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   // refs
   if (input.showRefs !== false) {
-    const visible = selectVisibleRefs(input.refs, rng, 2);
+    const visible = selectVisibleRefs(input.refs, rng, CARD_STAT_COUNT);
     if (visible.length === 0) {
       // 空状态占位卡（频段刻度）
       const x = 92;
@@ -244,7 +244,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
       context.stroke();
 
       for (const [i, ref] of visible.entries()) {
-        const x = 92 + i * 320;
+        const x = 92 + i * 216;
         await drawText(
           context,
           ref.hero ? heroEyebrowOf(ref) : ref.label,
@@ -257,7 +257,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
           await drawHeroChips(
             context,
             ref.hero,
-            { x, y: 1160, w: 290, h: 88 },
+            { x, y: 1160, w: 196, h: 88 },
             {
               nameSize: 28,
               metaSize: 20,

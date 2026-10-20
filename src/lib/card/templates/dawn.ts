@@ -1,5 +1,5 @@
 import type { CardTemplate, TemplateContext } from '../types';
-import { heroEyebrowOf, selectVisibleRefs } from '../selection';
+import { CARD_STAT_COUNT, heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   FAMILY_SUBTITLE,
   FAMILY_WENKAI,
@@ -135,11 +135,11 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   // 赛季数据：暖白卡
   if (input.showRefs !== false && input.refs.length) {
-    const visible = selectVisibleRefs(input.refs, rng, 2);
+    const visible = selectVisibleRefs(input.refs, rng, CARD_STAT_COUNT);
     for (const [i, ref] of visible.entries()) {
-      const x = 92 + i * 464;
+      const x = 92 + i * 306;
       const y = 1030;
-      const w = 432;
+      const w = 282;
       const h = 150;
       context.save();
       roundRectPath(context, x, y, w, h, 20);
@@ -152,8 +152,8 @@ async function draw(ctx: TemplateContext): Promise<void> {
       await drawText(
         context,
         ref.hero ? heroEyebrowOf(ref) : ref.label,
-        x + 34,
-        y + 52,
+        x + 24,
+        y + 48,
         `400 24px "Noto Sans SC", sans-serif`,
         'rgba(90,60,50,0.55)'
       );
@@ -161,7 +161,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
         await drawHeroChips(
           context,
           ref.hero,
-          { x: x + 34, y: y + 68, w: w - 68, h: 66 },
+          { x: x + 24, y: y + 62, w: w - 48, h: 74 },
           {
             nameSize: 32,
             metaSize: 22,
@@ -180,7 +180,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
       context.font = valueFont;
       await document.fonts.load(valueFont, ref.value);
       context.fillStyle = '#E0532F';
-      context.fillText(ref.value, x + 34, y + 112);
+      context.fillText(ref.value, x + 24, y + 112);
     }
   }
 

@@ -1,17 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { createRng } from '../src/lib/card/rng';
 import {
+  CARD_STAT_COUNT,
   LIGHT_ALTERNATES,
   LIGHT_PRIMARY,
   MOOD_PRIMARY,
   SIGNAL_FALLBACK_WEIGHT,
+  buildAbilityRefs,
   buildSeed,
   heroEyebrowOf,
+  mergeCardRefs,
   resolveTemplateId,
   selectVisibleRefs,
 } from '../src/lib/card/selection';
 import { TEMPLATES } from '../src/lib/card/templates';
-import type { CheerRef } from '../src/types';
+import type { AbilitiesDisplay, CheerRef } from '../src/types';
 
 const DATE = '2026-10-06';
 const MOODS = ['victory', 'daily', 'low', 'hope'] as const;
@@ -307,6 +310,123 @@ describe('selectVisibleRefs', () => {
   it('shortens the hero eyebrow for narrow slots', () => {
     expect(heroEyebrowOf({ label: '常用英雄（按出场数）', value: '夏洛特', source: 'kpl' })).toBe('常用英雄');
     expect(heroEyebrowOf({ label: '常用英雄', value: '夏洛特', source: 'kpl' })).toBe('常用英雄');
+  });
+});
+
+describe('abilities_display integration', () => {
+  const ABILITIES: AbilitiesDisplay = {
+    score: 93.7,
+    overall_rank: 1,
+    position: '对抗路',
+    position_rank: 1,
+    fields: [
+      { key: 'support_ability', label: '支援能力', score: 97, rank: 1 },
+      { key: 'initiation', label: '开团能力', score: 94, rank: 1 },
+      { key: 'map_control', label: '场景控制', score: 90, rank: 1 },
+      { key: 'early_game', label: '前期表现', score: 88, rank: 1 },
+      { key: 'late_game', label: '后期表现', score: 93, rank: 2 },
+      { key: 'teamfight', label: '团战能力', score: 90, rank: 2 },
+      { key: 'invasion_ability', label: '入侵能力', score: 86, rank: 2 },
+      { key: 'durability', label: '生存能力', score: 72, rank: 2 },
+      { key: 'damage_output', label: '输出能力', score: 93, rank: 3 },
+      { key: 'economy', label: '经济发育', score: 86, rank: 3 },
+    ],
+  };
+
+  it('flattens structured abilities into short score and rank refs', () => {
+    const refs = buildAbilityRefs(ABILITIES);
+    expect(refs).toHaveLength(11);
+    expect(refs[0]).toEqual({ label: '联盟综合评分', value: '93.7', source: 'abilities_display' });
+    expect(refs[1]).toEqual({ label: '支援能力', value: '97(1st)', source: 'abilities_display', abilityRank: 1 });
+    expect(refs[9]).toEqual({ label: '输出能力', value: '93(3rd)', source: 'abilities_display', abilityRank: 3 });
+    expect(refs.at(-1)).toEqual({ label: '经济发育', value: '86(3rd)', source: 'abilities_display', abilityRank: 3 });
+    expect(buildAbilityRefs(null)).toEqual([]);
+  });
+
+  it('puts ability refs first and drops legacy merged labels', () => {
+    const legacy: CheerRef[] = [
+      { label: '联盟综合评分', value: '93.7（全联盟第1，对抗路第1）', source: 'kpl' },
+      { label: '对抗路分榜第1能力', value: '支援97、开团94、地图控制90、前期88', source: 'kpl' },
+      { label: '支援能力', value: '97', source: 'kpl' },
+      { label: '赛季胜率', value: '100%', source: 'season_summaries' },
+    ];
+    const merged = mergeCardRefs(legacy, ABILITIES);
+    expect(merged).toHaveLength(12);
+    expect(merged.slice(0, 11).every((ref) => ref.source === 'abilities_display')).toBe(true);
+    expect(merged.filter((ref) => ref.label === '支援能力')).toHaveLength(1);
+    expect(merged.some((ref) => ref.label === '对抗路分榜第1能力')).toBe(false);
+    expect(merged.some((ref) => ref.label === '联盟综合评分' && ref.source !== 'abilities_display')).toBe(false);
+    expect(merged.at(-1)).toEqual({ label: '赛季胜率', value: '100%', source: 'season_summaries' });
+  });
+
+  it('prefers rank-1 ability fields and keeps rank 2/3 out while they exist', () => {
+    const refs: CheerRef[] = [
+      { label: '赛季胜率', value: '100%', source: 'season_summaries' },
+      { label: '赛季KDA', value: '9.38', source: 'season_summaries' },
+    ];
+    const seen = new Set<string>();
+    for (let i = 0; i < 80; i++) {
+      const picked = selectVisibleRefs(mergeCardRefs(refs, ABILITIES), createRng(`top-rank-${i}`), CARD_STAT_COUNT);
+      for (const ref of picked) {
+        const rank = /\((\d+)(?:st|nd|rd|th)\)$/.exec(ref.value);
+        if (rank) expect(Number(rank[1])).toBe(1);
+        seen.add(ref.label);
+      }
+    }
+    for (const label of ['支援能力', '开团能力', '场景控制', '前期表现']) expect(seen.has(label)).toBe(true);
+  });
+
+  it('falls back to rank 2/3 ability fields only when no rank-1 field exists', () => {
+    const noTop: AbilitiesDisplay = {
+      ...ABILITIES,
+      fields: ABILITIES.fields.filter((field) => field.rank > 1),
+    };
+    const refs: CheerRef[] = [{ label: '赛季胜率', value: '100%', source: 'season_summaries' }];
+    const seen = new Set<string>();
+    for (let i = 0; i < 60; i++) {
+      const picked = selectVisibleRefs(mergeCardRefs(refs, noTop), createRng(`fallback-rank-${i}`), CARD_STAT_COUNT);
+      for (const ref of picked) seen.add(ref.label);
+    }
+    expect([...seen].some((label) => /后期表现|团战能力|生存能力|输出能力|经济发育/.test(label))).toBe(true);
+  });
+
+  it('leaves refs untouched when structured abilities are absent', () => {
+    const refs: CheerRef[] = [{ label: '联盟综合评分', value: '93.7（全联盟第1）', source: 'kpl' }];
+    expect(mergeCardRefs(refs, null)).toEqual(refs);
+    expect(mergeCardRefs(undefined, undefined)).toEqual([]);
+  });
+
+  it('never turns an ability list into pseudo heroes', () => {
+    const refs: CheerRef[] = [
+      { label: '对抗路分榜第1能力', value: '支援97、开团94、地图控制90、前期88', source: 'kpl' },
+      { label: '赛季胜率', value: '100%', source: 'kpl' },
+      { label: '赛季KDA', value: '9.38', source: 'kpl' },
+    ];
+    for (let i = 0; i < 40; i++) {
+      const picked = selectVisibleRefs(refs, createRng(`ability-${i}`), CARD_STAT_COUNT);
+      expect(picked.length).toBeLessThanOrEqual(3);
+      expect(picked.every((ref) => ref.hero === undefined)).toBe(true);
+    }
+  });
+
+  it('fills three distinct stats from the merged pool', () => {
+    const refs: CheerRef[] = [
+      { label: '赛季胜率', value: '100%', source: 'season_summaries' },
+      { label: '赛季KDA', value: '9.38', source: 'season_summaries' },
+      { label: '赛季MVP', value: '2', source: 'season_summaries' },
+      { label: '常用英雄', value: '夏洛特（32局，胜率68.8%）、狂铁（26局，胜率69.2%）', source: 'season_summaries' },
+    ];
+    expect(CARD_STAT_COUNT).toBe(3);
+    const seen = new Set<string>();
+    for (let i = 0; i < 40; i++) {
+      const picked = selectVisibleRefs(mergeCardRefs(refs, ABILITIES), createRng(`three-${i}`), CARD_STAT_COUNT);
+      expect(picked).toHaveLength(3);
+      const labels = picked.map((ref) => ref.label);
+      expect(new Set(labels).size).toBe(3);
+      for (const label of labels) seen.add(label);
+    }
+    expect(seen.has('支援能力')).toBe(true);
+    expect(seen.size).toBeGreaterThan(3);
   });
 });
 

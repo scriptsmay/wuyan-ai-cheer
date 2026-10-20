@@ -96,6 +96,7 @@ async function handleRender() {
       line: editingLine.value,
       emojiCaption: editingCaption.value,
       refs: props.result.refs,
+      abilitiesDisplay: props.result.abilities_display,
       sourceSnapshotAt: props.result.source_snapshot_at,
       checkin: props.checkin,
       showQr: showQr.value,

@@ -1,6 +1,6 @@
 import type { CheerRef } from '../../../types';
 import type { CardTemplate, TemplateContext } from '../types';
-import { heroEyebrowOf, selectVisibleRefs } from '../selection';
+import { CARD_STAT_COUNT, heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   CARD_HEIGHT,
   CARD_WIDTH,
@@ -313,7 +313,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   // 规格表
   if (input.showRefs !== false && input.refs.length) {
-    await drawSpecTable(context, selectVisibleRefs(input.refs, rng, 2, 12), theme.primary);
+    await drawSpecTable(context, selectVisibleRefs(input.refs, rng, CARD_STAT_COUNT, 12), theme.primary);
   } else {
     dimensionH(context, 96, 736, 1060, 'AWAITING TELEMETRY');
   }

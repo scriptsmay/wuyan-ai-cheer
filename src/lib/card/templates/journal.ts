@@ -1,5 +1,5 @@
 import type { CardTemplate, TemplateContext } from '../types';
-import { heroEyebrowOf, selectVisibleRefs } from '../selection';
+import { CARD_STAT_COUNT, heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   FAMILY_MONO,
   FAMILY_WENKAI,
@@ -413,10 +413,10 @@ async function draw(ctx: TemplateContext): Promise<void> {
   /* ---------- 笺格数据区（方角双线，不用胶带贴纸） ---------- */
   const slipY = 1114;
   const slipH = 106;
-  const visible = input.showRefs !== false ? selectVisibleRefs(input.refs, rng, 2) : [];
+  const visible = input.showRefs !== false ? selectVisibleRefs(input.refs, rng, CARD_STAT_COUNT) : [];
   if (visible.length) {
-    const slipW = 400;
-    const xs = visible.length === 1 ? [340] : [120, 556];
+    const slipW = 278;
+    const xs = visible.length === 1 ? [401] : visible.length === 2 ? [245, 557] : [92, 398, 704];
     for (const [i, ref] of visible.entries()) {
       const x = xs[i]!;
       const y = slipY;
@@ -444,10 +444,10 @@ async function draw(ctx: TemplateContext): Promise<void> {
         await drawHeroChips(
           context,
           ref.hero,
-          { x: x + 16, y: y + 46, w: slipW - 32, h: 54 },
+          { x: x + 14, y: y + 46, w: slipW - 28, h: 54 },
           {
-            nameSize: 30,
-            metaSize: 20,
+            nameSize: 24,
+            metaSize: 16,
             nameColor: CINNABAR,
             metaColor: INK_SOFT,
             nameFill: 'rgba(158,59,46,0.07)',
