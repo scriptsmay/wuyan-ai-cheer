@@ -12,7 +12,8 @@ export type TemplateId =
   | 'blueprint'
   | 'mist'
   | 'clipping'
-  | 'vermillion';
+  | 'vermillion'
+  | 'journal';
 
 /** 卡片取样的明暗外观，与站内主题（<html data-theme>）同源 */
 export type CardAppearance = 'light' | 'dark';
@@ -59,16 +60,18 @@ export const LIGHT_ALTERNATES: Record<Mood, readonly (readonly [TemplateId, numb
     ['pulse', 0.1],
   ],
   daily: [
-    ['pulse', 0.6],
-    ['blueprint', 0.4],
+    ['pulse', 0.45],
+    ['journal', 0.35],
+    ['blueprint', 0.3],
   ],
   low: [
     ['blueprint', 0.6],
     ['pulse', 0.4],
   ],
   hope: [
-    ['mist', 0.6],
-    ['clipping', 0.4],
+    ['mist', 0.45],
+    ['journal', 0.35],
+    ['clipping', 0.3],
   ],
 };
 

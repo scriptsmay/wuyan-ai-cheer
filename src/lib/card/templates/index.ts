@@ -11,6 +11,7 @@ import { blueprintTemplate } from './blueprint';
 import { mistTemplate } from './mist';
 import { clippingTemplate } from './clipping';
 import { vermillionTemplate } from './vermillion';
+import { journalTemplate } from './journal';
 
 export const TEMPLATES: Record<TemplateId, CardTemplate> = {
   note: noteTemplate,
@@ -24,4 +25,5 @@ export const TEMPLATES: Record<TemplateId, CardTemplate> = {
   mist: mistTemplate,
   clipping: clippingTemplate,
   vermillion: vermillionTemplate,
+  journal: journalTemplate,
 };

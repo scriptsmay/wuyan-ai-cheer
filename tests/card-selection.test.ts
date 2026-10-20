@@ -42,7 +42,7 @@ describe('card template selection', () => {
       expect(primaryCount).toBeLessThan(200);
       // 深色主题下不投放亮色专属模板
       for (const id of ids) {
-        expect(['pulse', 'blueprint', 'mist', 'clipping']).not.toContain(id);
+        expect(['pulse', 'blueprint', 'mist', 'clipping', 'journal']).not.toContain(id);
       }
     }
   });
@@ -323,9 +323,10 @@ describe('template registry', () => {
     'mist',
     'clipping',
     'vermillion',
+    'journal',
   ] as const;
 
-  it('exposes all ten templates with draw functions', () => {
+  it('exposes all registered templates with draw functions', () => {
     for (const id of ALL_IDS) {
       expect(TEMPLATES[id]).toBeDefined();
       expect(typeof TEMPLATES[id].draw).toBe('function');

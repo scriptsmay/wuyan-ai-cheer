@@ -55,6 +55,13 @@ const ALL_CASES: CaseDef[] = [
     mood: 'victory',
     appearance: 'light',
   },
+  {
+    key: 'journal',
+    label: 'journal · 文艺札记（daily 小红书风）',
+    templateId: 'journal',
+    mood: 'daily',
+    appearance: 'light',
+  },
 ];
 
 const DEFAULT_LINES: Record<string, string> = {
@@ -69,6 +76,7 @@ const DEFAULT_LINES: Record<string, string> = {
   blueprint: '把每一次训练都画进结构图里，尺寸精准，进度可见。',
   mist: '今天电量只剩一格，那就先慢慢回血，光会等我们的。',
   clipping: '把这波连胜剪下来贴在墙上，抬头就能看见！',
+  journal: '还记得春季赛那会儿吗，无言拿对抗路一阵的时候评论区全在刷「终于」，那种从质疑里慢慢磨出来的感觉，比数据本身还让人上头。',
 };
 
 const CAPTIONS: Record<string, string> = {
@@ -83,6 +91,7 @@ const CAPTIONS: Record<string, string> = {
   blueprint: '按图施工',
   mist: '慢慢回血',
   clipping: '剪下来收藏',
+  journal: '周二早安☀️ 打卡完成，今天也是被无言稳到的一天🫶',
 };
 
 // 真实的 KSG.无言 对抗路英雄池与战绩兜底
