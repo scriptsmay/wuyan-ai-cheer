@@ -15,6 +15,7 @@ import {
   drawText,
   fitText,
   formatDate,
+  layoutCaption,
   roundRectPath,
 } from '../shared';
 
@@ -263,6 +264,16 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   // 主文案（图纸正文用中等重量无衬线，读起来像规格说明）
   const copyTop = 384;
+  const captionLimit = 962;
+  const captionGap = 100;
+  const captionChrome = 26;
+  const caption = await layoutCaption(context, input.emojiCaption, FAMILY_SUBTITLE, {
+    maxWidth: 760,
+    maxSize: 26,
+    minSize: 20,
+    lineHeightRatio: 1.3,
+    weight: 500,
+  });
   const fitted = await fitText(context, input.line, FAMILY_SUBTITLE, {
     maxWidth: 720,
     maxLines: 6,
@@ -270,6 +281,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
     minSize: 40,
     lineHeightRatio: 1.42,
     weight: 500,
+    maxHeight: captionLimit - copyTop - (caption.lines.length ? captionGap + caption.height + captionChrome : 0),
   });
   context.font = fitted.font;
   context.fillStyle = INK;
@@ -279,24 +291,23 @@ async function draw(ctx: TemplateContext): Promise<void> {
   leader(context, 600, copyBottom + 96, 'CHEER.LINE', theme.primary);
   dimensionV(context, 860, copyTop - 56, Math.min(copyBottom + 6, 960), `H=${Math.round(copyBottom - copyTop + 112)}`);
 
-  // 心情标语：描边规格标签
-  if (input.emojiCaption) {
-    const font = `500 26px ${FAMILY_SUBTITLE}`;
-    context.font = font;
-    await document.fonts.load(font, input.emojiCaption);
-    const tw = context.measureText(input.emojiCaption).width;
-    const top = Math.min(copyBottom + 78, 1000);
+  // 心情标语：描边规格标签（长句折行，MOOD 对齐首行）
+  if (caption.lines.length) {
+    const top = copyBottom + captionGap;
+    const h = caption.height + captionChrome;
+    const firstCenter = top + 13 + caption.size / 2;
     context.save();
-    roundRectPath(context, 96, top - 34, tw + 132, 52, 6);
+    roundRectPath(context, 96, top, 88 + caption.width + 28, h, 6);
     context.strokeStyle = theme.secondary;
     context.lineWidth = 1.6;
     context.stroke();
     context.font = `600 20px ${FAMILY_MONO}`;
     context.fillStyle = theme.secondary;
-    context.fillText('MOOD', 112, top);
-    context.font = font;
+    context.textBaseline = 'middle';
+    context.fillText('MOOD', 112, firstCenter);
+    context.font = caption.font;
     context.fillStyle = INK;
-    context.fillText(input.emojiCaption, 184, top + 1);
+    caption.lines.forEach((row, index) => context.fillText(row, 184, firstCenter + index * caption.lineHeight));
     context.restore();
   }
 

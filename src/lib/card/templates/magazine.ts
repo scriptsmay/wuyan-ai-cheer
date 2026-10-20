@@ -5,6 +5,7 @@ import {
   FAMILY_WENKAI,
   buildQrImage,
   dayOfYear,
+  drawCaptionPill,
   drawGrain,
   drawHeroChips,
   drawQrFramed,
@@ -12,7 +13,7 @@ import {
   drawRuns,
   fitText,
   formatDate,
-  roundRectPath,
+  layoutCaption,
   strokeText,
   toRgb,
 } from '../shared';
@@ -78,34 +79,42 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   // 主文案：霞鹜文楷，大留白排版
   const copyTop = 436;
+  const captionLimit = 1050;
+  const captionGap = 64;
+  const captionPadY = 14;
+  const caption = await layoutCaption(context, input.emojiCaption, FAMILY_BODY, {
+    maxWidth: 800,
+    maxSize: 30,
+    minSize: 22,
+    lineHeightRatio: 1.3,
+    weight: 500,
+  });
   const fitted = await fitText(context, input.line, FAMILY_WENKAI, {
     maxWidth: 860,
     maxLines: 6,
     maxSize: 88,
     minSize: 50,
     lineHeightRatio: 1.38,
+    maxHeight: captionLimit - copyTop - (caption.lines.length ? captionGap + caption.height + captionPadY * 2 : 0),
   });
   context.font = fitted.font;
   context.fillStyle = INK;
   fitted.lines.forEach((row, index) => context.fillText(row, 110, copyTop + index * fitted.lineHeight));
 
-  // 心情标语：细线框标签
+  // 心情标语：细线框标签（长句自动折行）
   const copyBottom = copyTop + (fitted.lines.length - 1) * fitted.lineHeight;
-  if (input.emojiCaption) {
-    const font = `500 30px ${FAMILY_BODY}`;
-    context.font = font;
-    await document.fonts.load(font, input.emojiCaption);
-    const tw = context.measureText(input.emojiCaption).width;
-    const padX = 24;
-    const h = 58;
-    const captionGap = fitted.lines.length >= 5 ? 48 : 64;
-    const top = Math.min(copyBottom + captionGap, 980);
-    context.strokeStyle = accent;
-    context.lineWidth = 1.5;
-    roundRectPath(context, 110, top, tw + padX * 2, h, 6);
-    context.stroke();
-    context.fillStyle = INK;
-    context.fillText(input.emojiCaption, 110 + padX, top + h / 2 + 10);
+  if (caption.lines.length) {
+    drawCaptionPill(context, {
+      x: 110,
+      top: copyBottom + captionGap,
+      layout: caption,
+      padX: 24,
+      padY: captionPadY,
+      stroke: accent,
+      strokeWidth: 1.5,
+      radius: 6,
+      color: INK,
+    });
   }
 
   // 赛季数据：细分隔线 + 双列

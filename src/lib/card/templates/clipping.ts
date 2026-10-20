@@ -7,6 +7,7 @@ import {
   FAMILY_TITLE,
   buildQrImage,
   dayOfYear,
+  drawCaptionPill,
   drawGrain,
   drawHalftone,
   drawHeroChips,
@@ -16,6 +17,7 @@ import {
   drawTape,
   fitText,
   formatDate,
+  layoutCaption,
   roundRectPath,
   toRgb,
 } from '../shared';
@@ -115,6 +117,16 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   // 主文案：套印错位（accent 副本垫底 + 墨黑正本）
   const copyTop = 420;
+  const captionLimit = 1000;
+  const captionGap = 84;
+  const captionPadY = 10;
+  const caption = await layoutCaption(context, input.emojiCaption, FAMILY_TITLE, {
+    maxWidth: 800,
+    maxSize: 42,
+    minSize: 26,
+    lineHeightRatio: 1.26,
+    weight: 400,
+  });
   const fitted = await fitText(context, input.line, FAMILY_TITLE, {
     maxWidth: 880,
     maxLines: 5,
@@ -122,6 +134,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
     minSize: 46,
     lineHeightRatio: 1.26,
     weight: 400,
+    maxHeight: captionLimit - copyTop - (caption.lines.length ? captionGap + caption.height + captionPadY * 2 : 0),
   });
   const offsetX = rng.range(5, 9);
   const offsetY = rng.range(4, 8);
@@ -139,24 +152,20 @@ async function draw(ctx: TemplateContext): Promise<void> {
   });
   const copyBottom = copyTop + (fitted.lines.length - 1) * fitted.lineHeight;
 
-  // 心情标语：彩带剪贴条
-  if (input.emojiCaption) {
-    const font = `400 42px ${FAMILY_TITLE}`;
-    context.font = font;
-    await document.fonts.load(font, input.emojiCaption);
-    const tw = context.measureText(input.emojiCaption).width;
-    // 按行高留距，避免压住末行大字的全角标点下沉笔画
-    const top = Math.min(copyBottom + fitted.lineHeight * 0.66 + 42, 982);
-    context.save();
-    context.fillStyle = ink;
-    context.globalAlpha = 0.92;
-    roundRectPath(context, 92, top - 42, tw + 56, 62, 8);
-    context.fill();
-    context.restore();
-    context.font = font;
-    context.fillStyle = '#FFF9F0';
-    context.fillText(input.emojiCaption, 120, top);
-    drawTape(context, rng, 152, top - 42, 96, 30, 'rgba(255,255,255,0.66)');
+  // 心情标语：彩带剪贴条（长句自动折行）
+  if (caption.lines.length) {
+    const top = copyBottom + captionGap;
+    drawCaptionPill(context, {
+      x: 92,
+      top,
+      layout: caption,
+      padX: 28,
+      padY: captionPadY,
+      radius: 8,
+      fill: `rgba(${toRgb(ink)},0.92)`,
+      color: '#FFF9F0',
+    });
+    drawTape(context, rng, 152, top - 4, 96, 30, 'rgba(255,255,255,0.66)');
   }
 
   // 数据剪贴块

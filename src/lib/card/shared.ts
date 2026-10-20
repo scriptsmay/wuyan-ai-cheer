@@ -273,6 +273,7 @@ export interface FittedText {
 /**
  * 自适应字号排版：从 maxSize 逐级缩小，直到换行数 ≤ maxLines；
  * 返回行数组与绘制参数。放不下时按 minSize 截断到 maxLines。
+ * maxHeight 传入正文可用高度时，会为下方标语预留空间（按基线跨度计算）。
  */
 export async function fitText(
   context: CanvasRenderingContext2D,
@@ -285,28 +286,128 @@ export async function fitText(
     minSize: number;
     lineHeightRatio?: number;
     weight?: number;
+    /** 正文可用高度（首行基线到末行基线的跨度），超出时继续缩字号或减行 */
+    maxHeight?: number;
   }
 ): Promise<FittedText> {
   const ratio = opts.lineHeightRatio ?? 1.32;
   const probeFont = `${opts.weight ?? 400} ${opts.minSize}px ${family}`;
   context.font = probeFont;
   await document.fonts.load(probeFont, text);
+  const fitsHeight = (lineCount: number, lineHeight: number): boolean =>
+    opts.maxHeight === undefined || (lineCount - 1) * lineHeight <= opts.maxHeight;
   for (let size = opts.maxSize; size >= opts.minSize; size -= 4) {
     const font = `${opts.weight ?? 400} ${size}px ${family}`;
     context.font = font;
     const wrapped = wrapText(context, text, opts.maxWidth);
-    if (wrapped.length <= opts.maxLines) {
-      return { lines: wrapped, font, size, lineHeight: Math.round(size * ratio) };
+    const lineHeight = Math.round(size * ratio);
+    if (wrapped.length <= opts.maxLines && fitsHeight(wrapped.length, lineHeight)) {
+      return { lines: wrapped, font, size, lineHeight };
     }
   }
   const font = `${opts.weight ?? 400} ${opts.minSize}px ${family}`;
   context.font = font;
+  const lineHeight = Math.round(opts.minSize * ratio);
+  // 兜底也优先遵守高度：先按 maxHeight 压行数，再受 maxLines 约束
+  const heightLines = opts.maxHeight === undefined ? opts.maxLines : Math.floor(opts.maxHeight / lineHeight) + 1;
+  const cappedLines = Math.max(1, Math.min(opts.maxLines, heightLines));
   return {
-    lines: wrapText(context, text, opts.maxWidth).slice(0, opts.maxLines),
+    lines: wrapText(context, text, opts.maxWidth).slice(0, cappedLines),
     font,
     size: opts.minSize,
-    lineHeight: Math.round(opts.minSize * ratio),
+    lineHeight,
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* 心情标语                                                            */
+/* ------------------------------------------------------------------ */
+
+export interface CaptionLayout extends FittedText {
+  /** 最宽一行的像素宽度 */
+  width: number;
+  /** 文本块视觉高度：(行数 - 1) × 行高 + 字号 */
+  height: number;
+}
+
+/**
+ * 标语排版：与正文共用自适应逻辑，但限制在 1~2 行、独立的字号区间，
+ * 避免长句在卡面右侧被硬截断。空文案返回零尺寸。
+ */
+export async function layoutCaption(
+  context: CanvasRenderingContext2D,
+  text: string,
+  family: string,
+  opts: {
+    maxWidth: number;
+    maxLines?: number;
+    maxSize: number;
+    minSize: number;
+    lineHeightRatio?: number;
+    weight?: number;
+  }
+): Promise<CaptionLayout> {
+  const trimmed = text?.trim();
+  if (!trimmed) {
+    return { lines: [], font: '', size: 0, lineHeight: 0, width: 0, height: 0 };
+  }
+  const fitted = await fitText(context, trimmed, family, {
+    maxWidth: opts.maxWidth,
+    maxLines: opts.maxLines ?? 2,
+    maxSize: opts.maxSize,
+    minSize: opts.minSize,
+    lineHeightRatio: opts.lineHeightRatio ?? 1.3,
+    weight: opts.weight,
+  });
+  context.font = fitted.font;
+  const width = fitted.lines.reduce((max, row) => Math.max(max, context.measureText(row).width), 0);
+  return { ...fitted, width, height: (fitted.lines.length - 1) * fitted.lineHeight + fitted.size };
+}
+
+export interface CaptionPillOptions {
+  /** 左对齐时为左边界；center 对齐时为水平中心 */
+  x: number;
+  /** 胶囊顶边 */
+  top: number;
+  layout: CaptionLayout;
+  padX: number;
+  padY: number;
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  radius?: number;
+  color: string;
+  align?: 'left' | 'center';
+}
+
+/** 绘制多行标语胶囊，返回胶囊底边 y（供后续元素继续向下排） */
+export function drawCaptionPill(context: CanvasRenderingContext2D, opts: CaptionPillOptions): number {
+  const { layout } = opts;
+  if (!layout.lines.length) return opts.top;
+  const w = layout.width + opts.padX * 2;
+  const h = layout.height + opts.padY * 2;
+  const x = opts.align === 'center' ? opts.x - w / 2 : opts.x;
+  context.save();
+  if (opts.fill || opts.stroke) {
+    roundRectPath(context, x, opts.top, w, h, opts.radius ?? h / 2);
+    if (opts.fill) {
+      context.fillStyle = opts.fill;
+      context.fill();
+    }
+    if (opts.stroke) {
+      context.strokeStyle = opts.stroke;
+      context.lineWidth = opts.strokeWidth ?? 2;
+      context.stroke();
+    }
+  }
+  context.font = layout.font;
+  context.fillStyle = opts.color;
+  context.textAlign = 'left';
+  context.textBaseline = 'middle';
+  const firstCenter = opts.top + opts.padY + layout.size / 2;
+  layout.lines.forEach((row, i) => context.fillText(row, x + opts.padX, firstCenter + i * layout.lineHeight));
+  context.restore();
+  return opts.top + h;
 }
 
 /* ------------------------------------------------------------------ */

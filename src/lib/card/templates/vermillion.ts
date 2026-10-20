@@ -13,6 +13,7 @@ import {
   drawRuns,
   fitText,
   formatDate,
+  layoutCaption,
   roundRectPath,
 } from '../shared';
 
@@ -257,13 +258,22 @@ async function draw(ctx: TemplateContext): Promise<void> {
   // canvas 没有 text-wrap: balance，末行孤字（如「瘩」独行）单独回收：
   // 逐档收窄 maxWidth 重排，直到末行 ≥2 字或遍历完保留原排。
   const copyTop = 330;
+  const captionLimit = 1000;
+  const captionGap = 78;
+  const caption = await layoutCaption(context, input.emojiCaption, FAMILY_WENKAI, {
+    maxWidth: 880,
+    maxSize: 48,
+    minSize: 30,
+    lineHeightRatio: 1.3,
+  });
   const FIT_OPTS = {
     maxLines: 5,
     maxSize: 84,
     minSize: 58,
     lineHeightRatio: 1.3,
     weight: 400,
-  } as const;
+    maxHeight: captionLimit - copyTop - (caption.lines.length ? captionGap + caption.height : 0),
+  };
   let fitted = await fitText(context, input.line, FAMILY_TITLE, {
     ...FIT_OPTS,
     maxWidth: 800,
@@ -287,18 +297,20 @@ async function draw(ctx: TemplateContext): Promise<void> {
     context.fillText(row, 90, baseline);
   });
 
-  // 心情标语：霞鹜文楷 + 朱印色条
+  // 心情标语：霞鹜文楷 + 朱印色条（长句折行，色条压在第一行上方）
   const copyBottom = copyTop + (fitted.lines.length - 1) * fitted.lineHeight;
-  const captionY = Math.min(copyBottom + 78, 940);
-  if (input.emojiCaption) {
+  const captionTop = copyBottom + captionGap;
+  if (caption.lines.length) {
     context.fillStyle = VERMILLION;
-    roundRectPath(context, 92, captionY - 38, 52, 10, 5);
+    roundRectPath(context, 92, captionTop - 20, 52, 10, 5);
     context.fill();
-    const font = `400 48px ${FAMILY_WENKAI}`;
-    context.font = font;
-    await document.fonts.load(font, input.emojiCaption);
+    context.save();
+    context.font = caption.font;
+    await document.fonts.load(caption.font, caption.lines.join(''));
     context.fillStyle = INK;
-    context.fillText(input.emojiCaption, 92, captionY + 14);
+    context.textBaseline = 'top';
+    caption.lines.forEach((row, index) => context.fillText(row, 92, captionTop + index * caption.lineHeight));
+    context.restore();
   }
 
   // 数据区

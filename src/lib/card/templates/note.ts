@@ -16,6 +16,7 @@ import {
   fitText,
   formatDate,
   formatWeekday,
+  layoutCaption,
 } from '../shared';
 
 /* 打卡日签 · 手写便签风：奶油纸底 + 霞鹜文楷 + 和纸胶带 + 红笔手绘圈注 */
@@ -171,12 +172,21 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   // 主文案（霞鹜文楷，自适应字号）
   const copyTop = 488;
+  const captionLimit = 1056;
+  const captionGap = 80;
+  const caption = await layoutCaption(context, input.emojiCaption, FAMILY_WENKAI, {
+    maxWidth: 860,
+    maxSize: 44,
+    minSize: 30,
+    lineHeightRatio: 1.3,
+  });
   const fitted = await fitText(context, input.line, FAMILY_WENKAI, {
     maxWidth: 880,
     maxLines: 6,
     maxSize: 80,
     minSize: 48,
     lineHeightRatio: 1.36,
+    maxHeight: captionLimit - copyTop - (caption.lines.length ? captionGap + caption.height : 0),
   });
   context.font = fitted.font;
   context.fillStyle = INK;
@@ -188,25 +198,25 @@ async function draw(ctx: TemplateContext): Promise<void> {
   }
   fitted.lines.forEach((row, index) => context.fillText(row, 100, copyTop + index * fitted.lineHeight));
 
-  // 心情标语：文楷 + 红笔下划
+  // 心情标语：文楷 + 红笔下划（长句自动折成两行）
   const copyBottom = copyTop + (fitted.lines.length - 1) * fitted.lineHeight;
-  const captionGap = fitted.lines.length >= 5 ? 60 : 80;
-  const captionY = Math.min(copyBottom + captionGap, 1040);
-  if (input.emojiCaption) {
-    const captionFont = `400 44px ${FAMILY_WENKAI}`;
-    context.font = captionFont;
-    await document.fonts.load(captionFont, input.emojiCaption);
-    const tw = context.measureText(input.emojiCaption).width;
-    context.fillStyle = INK;
-    context.fillText(input.emojiCaption, 100, captionY);
+  const captionTop = copyBottom + captionGap;
+  if (caption.lines.length) {
     context.save();
+    context.font = caption.font;
+    context.fillStyle = INK;
+    context.textBaseline = 'top';
+    caption.lines.forEach((row, index) => context.fillText(row, 100, captionTop + index * caption.lineHeight));
+    const lastLine = caption.lines.at(-1) ?? '';
+    const tw = context.measureText(lastLine).width;
     context.strokeStyle = 'rgba(225,91,78,0.7)';
     context.lineWidth = 3.5;
     context.beginPath();
-    context.moveTo(100, captionY + 16);
+    const underlineY = captionTop + (caption.lines.length - 1) * caption.lineHeight + caption.size + 12;
+    context.moveTo(100, underlineY);
     for (let i = 0; i <= 24; i++) {
-      const px = 100 + (i / 24) * Math.min(tw + 20, 720);
-      const py = captionY + 16 + Math.sin(i * 0.9) * 3;
+      const px = 100 + (i / 24) * Math.min(tw + 20, 860);
+      const py = underlineY + Math.sin(i * 0.9) * 3;
       context.lineTo(px, py);
     }
     context.stroke();
@@ -300,11 +310,11 @@ async function draw(ctx: TemplateContext): Promise<void> {
     1418
   );
 
-  // 散落小涂鸦（星星 / 爱心随机点缀）
+  // 散落小涂鸦（星星 / 爱心随机点缀，放在标题与正文之间的留白带）
   if (rng.bool(0.7))
-    drawStarDoodle(context, rng.range(640, 1000), rng.range(880, 1020), rng.range(14, 24), 'rgba(242,183,5,0.75)');
+    drawStarDoodle(context, rng.range(620, 980), rng.range(325, 405), rng.range(14, 24), 'rgba(242,183,5,0.75)');
   if (rng.bool(0.5))
-    drawHeartDoodle(context, rng.range(680, 1000), rng.range(940, 1060), rng.range(12, 20), 'rgba(225,91,78,0.55)');
+    drawHeartDoodle(context, rng.range(620, 980), rng.range(325, 405), rng.range(12, 20), 'rgba(225,91,78,0.55)');
 }
 
 export const noteTemplate: CardTemplate = {

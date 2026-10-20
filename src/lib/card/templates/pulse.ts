@@ -3,9 +3,11 @@ import { heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   CARD_HEIGHT,
   CARD_WIDTH,
+  FAMILY_SUBTITLE,
   FAMILY_WENKAI,
   buildQrImage,
   buildSignalWavePath,
+  drawCaptionPill,
   drawGrain,
   drawHeroChips,
   drawQrFramed,
@@ -13,6 +15,7 @@ import {
   drawText,
   fitText,
   formatDate,
+  layoutCaption,
   roundRectPath,
 } from '../shared';
 
@@ -155,35 +158,40 @@ async function draw(ctx: TemplateContext): Promise<void> {
   // 主文案
   await drawText(context, 'SIGNAL / 01', 92, 415, `600 24px "Inter", "Noto Sans SC", sans-serif`, theme.primary);
   const copyTop = 504;
+  const captionLimit = 1070;
+  const captionGap = 64;
+  const captionPadY = 15;
+  const caption = await layoutCaption(context, input.emojiCaption, FAMILY_SUBTITLE, {
+    maxWidth: 840,
+    maxSize: 34,
+    minSize: 24,
+    lineHeightRatio: 1.35,
+    weight: 500,
+  });
   const fitted = await fitText(context, input.line, FAMILY_WENKAI, {
     maxWidth: 896,
     maxLines: 5,
     maxSize: 78,
     minSize: 50,
     lineHeightRatio: 1.34,
+    maxHeight: captionLimit - copyTop - (caption.lines.length ? captionGap + caption.height + captionPadY * 2 : 0),
   });
   context.font = fitted.font;
   context.fillStyle = INK;
   fitted.lines.forEach((row, index) => context.fillText(row, 92, copyTop + index * fitted.lineHeight));
 
-  // 情绪 pill
-  if (input.emojiCaption) {
-    const font = `500 34px "HarmonyOS Sans SC", "Noto Sans SC", sans-serif`;
-    context.font = font;
-    await document.fonts.load(font, input.emojiCaption);
-    const tw = context.measureText(input.emojiCaption).width;
-    const padX = 28;
-    const h = 62;
-    const captionGap = fitted.lines.length >= 5 ? 44 : 64;
-    const top = Math.min(copyTop + (fitted.lines.length - 1) * fitted.lineHeight + captionGap, 1000);
-    context.save();
-    roundRectPath(context, 92, top, tw + padX * 2, h, h / 2);
-    context.fillStyle = theme.secondary;
-    context.fill();
-    context.fillStyle = theme.onAccent;
-    context.textBaseline = 'middle';
-    context.fillText(input.emojiCaption, 92 + padX, top + h / 2 + 2);
-    context.restore();
+  // 情绪 pill（长句自动折行）
+  const copyBottom = copyTop + (fitted.lines.length - 1) * fitted.lineHeight;
+  if (caption.lines.length) {
+    drawCaptionPill(context, {
+      x: 92,
+      top: copyBottom + captionGap,
+      layout: caption,
+      padX: 28,
+      padY: captionPadY,
+      fill: theme.secondary,
+      color: theme.onAccent,
+    });
   }
 
   // 赛季数据

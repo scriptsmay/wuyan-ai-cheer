@@ -3,9 +3,11 @@ import { heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   CARD_HEIGHT,
   CARD_WIDTH,
+  FAMILY_SUBTITLE,
   FAMILY_WENKAI,
   buildQrImage,
   drawBlobs,
+  drawCaptionPill,
   drawGrain,
   drawHeroChips,
   drawQrFramed,
@@ -14,6 +16,7 @@ import {
   drawText,
   fitText,
   formatDate,
+  layoutCaption,
   roundRectPath,
 } from '../shared';
 
@@ -90,39 +93,42 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   // 主文案
   const copyTop = 468;
+  const captionLimit = 1006;
+  const captionGap = 72;
+  const captionPadY = 15;
+  const caption = await layoutCaption(context, input.emojiCaption, FAMILY_SUBTITLE, {
+    maxWidth: 840,
+    maxSize: 32,
+    minSize: 22,
+    lineHeightRatio: 1.35,
+    weight: 500,
+  });
   const fitted = await fitText(context, input.line, FAMILY_WENKAI, {
     maxWidth: 880,
     maxLines: 6,
     maxSize: 78,
     minSize: 48,
     lineHeightRatio: 1.36,
+    maxHeight: captionLimit - copyTop - (caption.lines.length ? captionGap + caption.height + captionPadY * 2 : 0),
   });
   context.font = fitted.font;
   context.fillStyle = INK;
   fitted.lines.forEach((row, index) => context.fillText(row, 92, copyTop + index * fitted.lineHeight));
   const copyBottom = copyTop + (fitted.lines.length - 1) * fitted.lineHeight;
 
-  // 心情标语：淡紫描边 pill（dusk 实底 pill 的亮色对应）
-  if (input.emojiCaption) {
-    const font = `500 32px "HarmonyOS Sans SC", "Noto Sans SC", sans-serif`;
-    context.font = font;
-    await document.fonts.load(font, input.emojiCaption);
-    const tw = context.measureText(input.emojiCaption).width;
-    const padX = 28;
-    const h = 62;
-    const captionGap = fitted.lines.length >= 5 ? 52 : 72;
-    const top = Math.min(copyBottom + captionGap, 932);
-    context.save();
-    roundRectPath(context, 92, top, tw + padX * 2, h, h / 2);
-    context.fillStyle = 'rgba(255,255,255,0.68)';
-    context.fill();
-    context.strokeStyle = `rgba(${theme.primaryRgb},0.45)`;
-    context.lineWidth = 1.5;
-    context.stroke();
-    context.fillStyle = VIOLET;
-    context.textBaseline = 'middle';
-    context.fillText(input.emojiCaption, 92 + padX, top + h / 2 + 2);
-    context.restore();
+  // 心情标语：淡紫描边 pill（dusk 实底 pill 的亮色对应，长句自动折行）
+  if (caption.lines.length) {
+    drawCaptionPill(context, {
+      x: 92,
+      top: copyBottom + captionGap,
+      layout: caption,
+      padX: 28,
+      padY: captionPadY,
+      fill: 'rgba(255,255,255,0.68)',
+      stroke: `rgba(${theme.primaryRgb},0.45)`,
+      strokeWidth: 1.5,
+      color: VIOLET,
+    });
   }
 
   // 赛季数据：白雾卡

@@ -9,6 +9,7 @@ import {
   drawText,
   drawRuns,
   fitText,
+  layoutCaption,
   loadImage,
 } from '../shared';
 
@@ -153,31 +154,23 @@ async function draw(ctx: TemplateContext): Promise<void> {
   await drawQuoteMarks(context, COPY_MARGIN - 10, 316, 'rgba(255,255,255,0.85)');
 
   const copyTop = 430;
+  const captionLimit = 1000;
   const captionGap = 84;
-  const captionMax = 830;
-  const availableHeight = captionMax - captionGap - copyTop;
-  let fitted = await fitText(context, input.line, FAMILY_WENKAI, {
+  const caption = await layoutCaption(context, input.emojiCaption, FAMILY_BODY, {
+    maxWidth: COPY_WIDTH - 60,
+    maxSize: 42,
+    minSize: 28,
+    lineHeightRatio: 1.3,
+  });
+  const fitted = await fitText(context, input.line, FAMILY_WENKAI, {
     maxWidth: COPY_WIDTH,
     maxLines: 5,
     maxSize: 132,
     minSize: 56,
     lineHeightRatio: 1.28,
     weight: 400,
+    maxHeight: captionLimit - copyTop - (caption.lines.length ? captionGap + caption.height : 0),
   });
-  if (fitted.lines.length >= 4) {
-    const linesCount = fitted.lines.length;
-    const maxAllowedSize = Math.floor(availableHeight / Math.max(linesCount - 1, 1) / 1.2);
-    if (fitted.size > maxAllowedSize) {
-      fitted = await fitText(context, input.line, FAMILY_WENKAI, {
-        maxWidth: COPY_WIDTH,
-        maxLines: 5,
-        maxSize: Math.max(maxAllowedSize, 56),
-        minSize: 56,
-        lineHeightRatio: 1.2,
-        weight: 400,
-      });
-    }
-  }
   context.font = fitted.font;
   await document.fonts.load(fitted.font, input.line);
   fitted.lines.forEach((row, index) => {
@@ -193,17 +186,21 @@ async function draw(ctx: TemplateContext): Promise<void> {
     context.shadowOffsetY = 0;
   });
 
-  // ---- 心情标语：引用线式（左侧竖线 + 白字），替代色条 ----
+  // ---- 心情标语：引用线式（左侧竖线 + 白字），长句折行时竖线随整块伸缩 ----
   const copyBottom = copyTop + (fitted.lines.length - 1) * fitted.lineHeight;
-  const captionY = Math.min(copyBottom + captionGap, captionMax);
-  if (input.emojiCaption) {
-    const font = `400 42px ${FAMILY_BODY}`;
-    context.font = font;
-    await document.fonts.load(font, input.emojiCaption);
+  const captionTop = copyBottom + captionGap;
+  if (caption.lines.length) {
+    context.save();
+    context.font = caption.font;
+    await document.fonts.load(caption.font, caption.lines.join(''));
     context.fillStyle = 'rgba(255,255,255,0.94)';
-    context.fillText(input.emojiCaption, COPY_MARGIN + 26, captionY);
+    context.textBaseline = 'top';
+    caption.lines.forEach((row, index) =>
+      context.fillText(row, COPY_MARGIN + 26, captionTop + index * caption.lineHeight)
+    );
     context.fillStyle = 'rgba(255,255,255,0.55)';
-    context.fillRect(COPY_MARGIN, captionY - 34, 4, 46);
+    context.fillRect(COPY_MARGIN, captionTop, 4, caption.height);
+    context.restore();
   }
 
   // ---- 数据区 ----
