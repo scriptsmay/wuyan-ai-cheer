@@ -33,7 +33,7 @@ const ZHESHI = '#8A5A3B'; // 赭石 · 回纹 5.2:1
 const LINE = '#C9C1B2';
 const LINE_SOFT = '#DED7C8';
 
-const MARKS = ['无言应援', '对抗路一阵', 'KPL'];
+const MARKS = ['无言应援', 'KSG对抗路', 'KPL'];
 const VERTICAL_TEXT = '于无声处听惊雷';
 
 const CARD = { x: 120, y: 236, w: 800, h: 864 };
