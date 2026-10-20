@@ -605,7 +605,6 @@ function paintChips(
   let rowTop = top;
   context.save();
   context.textAlign = 'center';
-  context.textBaseline = 'middle';
   for (const row of rows) {
     const rowH = Math.max(...row.map((chip) => chip.h));
     const rowW = rowWidth(row, gap);
@@ -628,7 +627,15 @@ function paintChips(
       }
       context.font = chip.font;
       context.fillStyle = chip.color;
-      context.fillText(chip.text, cursor + chip.w / 2, rowTop + rowH / 2);
+      // textBaseline=middle 对齐的是 em 框中线，各字体实际字面重心会偏 2~3px；
+      // 改按墨迹包围盒求基线，三颗胶囊的文字才共用同一条视觉中线
+      const ink = context.measureText(chip.text);
+      const ascent = ink.actualBoundingBoxAscent;
+      const descent = ink.actualBoundingBoxDescent;
+      const hasInk = Number.isFinite(ascent) && Number.isFinite(descent);
+      context.textBaseline = hasInk ? 'alphabetic' : 'middle';
+      const baselineY = rowTop + rowH / 2 + (hasInk ? (ascent - descent) / 2 : 0);
+      context.fillText(chip.text, cursor + chip.w / 2, baselineY);
       cursor += chip.w + gap;
     }
     rowTop += rowH + rowGap;

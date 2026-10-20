@@ -76,7 +76,8 @@ const DEFAULT_LINES: Record<string, string> = {
   blueprint: '把每一次训练都画进结构图里，尺寸精准，进度可见。',
   mist: '今天电量只剩一格，那就先慢慢回血，光会等我们的。',
   clipping: '把这波连胜剪下来贴在墙上，抬头就能看见！',
-  journal: '还记得春季赛那会儿吗，无言拿对抗路一阵的时候评论区全在刷「终于」，那种从质疑里慢慢磨出来的感觉，比数据本身还让人上头。',
+  journal:
+    '还记得春季赛那会儿吗，无言拿对抗路一阵的时候评论区全在刷「终于」，那种从质疑里慢慢磨出来的感觉，比数据本身还让人上头。',
 };
 
 const CAPTIONS: Record<string, string> = {
@@ -96,11 +97,11 @@ const CAPTIONS: Record<string, string> = {
 
 // 真实的 KSG.无言 对抗路英雄池与战绩兜底
 const DEFAULT_REFS: CheerRef[] = [
-  { label: '当前赛季胜率', value: '100%', source: 'season_summaries' },
-  { label: '当前赛季 KDA', value: '9.38', source: 'season_summaries' },
-  { label: '当前赛季对局数', value: '9', source: 'season_summaries' },
-  { label: '当前赛季 MVP 次数', value: '2', source: 'season_summaries' },
-  { label: '当前赛季场均助攻', value: '5.78', source: 'season_summaries' },
+  { label: '赛季胜率', value: '100%', source: 'season_summaries' },
+  { label: '赛季KDA', value: '9.38', source: 'season_summaries' },
+  { label: '赛季对局数', value: '9', source: 'season_summaries' },
+  { label: '赛季MVP', value: '2', source: 'season_summaries' },
+  { label: '赛季场均助攻', value: '5.78', source: 'season_summaries' },
   {
     label: '常用英雄（按出场数）',
     value:
@@ -198,12 +199,12 @@ async function fetchOnlineOverview(): Promise<boolean> {
       .map((h) => `${h.hero_name}（${h.battles}局，胜率${h.win_rate}）`)
       .join('、');
     const newRefs: CheerRef[] = [];
-    if (cs.kda_ratio) newRefs.push({ label: '当前赛季 KDA', value: String(cs.kda_ratio), source: 'season_summaries' });
-    if (cs.win_rate) newRefs.push({ label: '当前赛季胜率', value: String(cs.win_rate), source: 'season_summaries' });
-    if (cs.battles) newRefs.push({ label: '当前赛季对局数', value: String(cs.battles), source: 'season_summaries' });
-    if (cs.mvp) newRefs.push({ label: '当前赛季 MVP 次数', value: String(cs.mvp), source: 'season_summaries' });
+    if (cs.kda_ratio) newRefs.push({ label: '赛季 KDA', value: String(cs.kda_ratio), source: 'season_summaries' });
+    if (cs.win_rate) newRefs.push({ label: '赛季胜率', value: String(cs.win_rate), source: 'season_summaries' });
+    if (cs.battles) newRefs.push({ label: '赛季对局数', value: String(cs.battles), source: 'season_summaries' });
+    if (cs.mvp) newRefs.push({ label: '赛季 MVP', value: String(cs.mvp), source: 'season_summaries' });
     if (cs.avg_assists)
-      newRefs.push({ label: '当前赛季场均助攻', value: String(cs.avg_assists), source: 'season_summaries' });
+      newRefs.push({ label: '赛季场均助攻', value: String(cs.avg_assists), source: 'season_summaries' });
     if (heroStr) newRefs.push({ label: '常用英雄（按出场数）', value: heroStr, source: 'season_summaries' });
 
     activeRefs.value = newRefs;
