@@ -3,14 +3,17 @@ import { CARD_STAT_COUNT, heroEyebrowOf, selectVisibleRefs } from '../selection'
 import {
   FAMILY_BODY,
   FAMILY_WENKAI,
+  HERO_CHIP_HEIGHT_RATIO,
   buildQrImage,
   drawHeroChips,
   drawQrFramed,
   drawText,
   drawRuns,
   fitText,
+  inkCenterY,
   layoutCaption,
   loadImage,
+  type HeroChipsStyle,
 } from '../shared';
 
 /* 应援 · victory 大字报：摄影背景 + 白色大字 + 手绘感框线（柔和版） */
@@ -54,6 +57,26 @@ async function drawStats(ctx: TemplateContext, y: number): Promise<void> {
 
   const visible = input.showRefs === false ? [] : selectVisibleRefs(input.refs, ctx.rng, CARD_STAT_COUNT);
   if (visible.length) {
+    // 胶囊首行与数字墨迹共用中线，整组从该中线向下排，避免沉到数字下方
+    const valueFont = `700 64px "JetBrains Mono", "Noto Sans SC", monospace`;
+    const sample = visible.find((ref) => !ref.hero)?.value ?? '0';
+    context.font = valueFont;
+    await document.fonts.load(valueFont, sample);
+    const valueCenterY = inkCenterY(context, sample, y + 26, 64);
+    const chipStyle: HeroChipsStyle = {
+      nameSize: 32,
+      metaSize: 22,
+      nameColor: WHITE,
+      metaColor: 'rgba(255,255,255,0.92)',
+      nameFill: 'rgba(255,255,255,0.14)',
+      metaFill: 'rgba(255,255,255,0.08)',
+      stroke: 'rgba(255,255,255,0.42)',
+      highColor: '#8FE0B8',
+      radiusRatio: 0.16,
+      valign: 'top',
+    };
+    const chipTop = valueCenterY - Math.round(chipStyle.nameSize * HERO_CHIP_HEIGHT_RATIO) / 2;
+
     for (const [i, ref] of visible.entries()) {
       const x = 92 + i * 306;
       await drawText(
@@ -65,25 +88,9 @@ async function drawStats(ctx: TemplateContext, y: number): Promise<void> {
         labelColor
       );
       if (ref.hero) {
-        await drawHeroChips(
-          context,
-          ref.hero,
-          { x, y: y - 14, w: 282, h: 96 },
-          {
-            nameSize: 32,
-            metaSize: 22,
-            nameColor: WHITE,
-            metaColor: 'rgba(255,255,255,0.92)',
-            nameFill: 'rgba(255,255,255,0.14)',
-            metaFill: 'rgba(255,255,255,0.08)',
-            stroke: 'rgba(255,255,255,0.42)',
-            highColor: '#8FE0B8',
-            radiusRatio: 0.16,
-          }
-        );
+        await drawHeroChips(context, ref.hero, { x, y: chipTop, w: 282, h: 96 }, chipStyle);
         continue;
       }
-      const valueFont = `700 64px "JetBrains Mono", "Noto Sans SC", monospace`;
       context.font = valueFont;
       await document.fonts.load(valueFont, ref.value);
       context.fillStyle = valueColor;

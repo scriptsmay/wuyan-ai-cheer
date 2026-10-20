@@ -218,6 +218,24 @@ export async function drawText(
   context.restore();
 }
 
+/**
+ * 文字墨迹中心的 y。textBaseline 的 em 中线随字体上下留白浮动，
+ * 数字与胶囊混排时按实测墨迹包围盒对齐，才能落在同一条视觉中线上。
+ * 调用前需先设置好 context.font。
+ */
+export function inkCenterY(
+  context: CanvasRenderingContext2D,
+  text: string,
+  baselineY: number,
+  fallbackSize: number
+): number {
+  const ink = context.measureText(text);
+  if (Number.isFinite(ink.actualBoundingBoxAscent) && Number.isFinite(ink.actualBoundingBoxDescent)) {
+    return baselineY - (ink.actualBoundingBoxAscent - ink.actualBoundingBoxDescent) / 2;
+  }
+  return baselineY - fallbackSize * 0.36;
+}
+
 /** 描边文字（用于杂志风水印大字等） */
 export async function strokeText(
   context: CanvasRenderingContext2D,
@@ -416,6 +434,8 @@ export function drawCaptionPill(context: CanvasRenderingContext2D, opts: Caption
 
 /** 胜率配色强调阈值：≥60% 走强强调色，其余用常规数值色 */
 export const WIN_RATE_HIGH = 60;
+/** 胶囊高度 / 字号比：模板按名字字号估首行高度，与数字墨迹中心对齐时用 */
+export const HERO_CHIP_HEIGHT_RATIO = 1.68;
 /** 胜率低于等于此值时不展示胜率胶囊（应援卡不呈现「低于五成」的战绩） */
 export const WIN_RATE_MIN_DISPLAY = 50;
 
@@ -443,6 +463,8 @@ export interface HeroChipsStyle {
   radiusRatio?: number;
   /** 'right' 时 box.x 当作右边界，整组向左生长；'center' 时按 box.w 居中（国风笺格用） */
   align?: 'left' | 'right' | 'center';
+  /** 纵向落位：缺省 center 在 box 内居中；top 以 box.y 为胶囊组顶边，用于和数字墨迹对齐 */
+  valign?: 'center' | 'top';
 }
 
 interface HeroChip {
@@ -477,7 +499,7 @@ async function measureHeroChip(
     fill,
     font,
     w: Math.round(context.measureText(text).width) + padX * 2,
-    h: Math.round(size * 1.68),
+    h: Math.round(size * HERO_CHIP_HEIGHT_RATIO),
   };
 }
 
@@ -601,7 +623,8 @@ function paintChips(
   gap: number,
   rowGap: number
 ): number {
-  const top = Math.max(box.y, box.y + (box.h - block.h) / 2);
+  const top =
+    style.valign === 'top' ? box.y : Math.max(box.y, box.y + (box.h - block.h) / 2);
   let rowTop = top;
   context.save();
   context.textAlign = 'center';

@@ -5,6 +5,7 @@ import {
   CARD_WIDTH,
   FAMILY_SUBTITLE,
   FAMILY_WENKAI,
+  HERO_CHIP_HEIGHT_RATIO,
   buildQrImage,
   buildSignalWavePath,
   drawCaptionPill,
@@ -15,8 +16,10 @@ import {
   drawText,
   fitText,
   formatDate,
+  inkCenterY,
   layoutCaption,
   roundRectPath,
+  type HeroChipsStyle,
 } from '../shared';
 
 /* 应援 · 亮色信号：signal 的浅色孪生，保留斜网格 / 正弦波 / 频段刻度这套科技语言 */
@@ -207,6 +210,26 @@ async function draw(ctx: TemplateContext): Promise<void> {
       context.lineTo(720, 1094);
       context.stroke();
 
+      // 胶囊首行与数字墨迹共用中线，整组从该中线向下排，避免沉到数字下方
+      const valueFont = `700 38px "JetBrains Mono", "Noto Sans SC", monospace`;
+      const sample = visible.find((ref) => !ref.hero)?.value ?? '0';
+      context.font = valueFont;
+      await document.fonts.load(valueFont, sample);
+      const valueCenterY = inkCenterY(context, sample, 1194, 38);
+      const chipStyle: HeroChipsStyle = {
+        nameSize: 28,
+        metaSize: 20,
+        nameColor: theme.primary,
+        metaColor: DIM,
+        nameFill: `rgba(${theme.primaryRgb},0.12)`,
+        metaFill: 'rgba(11,33,48,0.05)',
+        stroke: LINE,
+        highColor: '#1F7A5C',
+        nameFamily: FAMILY_WENKAI,
+        valign: 'top',
+      };
+      const chipTop = valueCenterY - Math.round(chipStyle.nameSize * HERO_CHIP_HEIGHT_RATIO) / 2;
+
       for (const [i, ref] of visible.entries()) {
         const x = 92 + i * 216;
         await drawText(
@@ -218,25 +241,9 @@ async function draw(ctx: TemplateContext): Promise<void> {
           DIM
         );
         if (ref.hero) {
-          await drawHeroChips(
-            context,
-            ref.hero,
-            { x, y: 1160, w: 196, h: 88 },
-            {
-              nameSize: 28,
-              metaSize: 20,
-              nameColor: theme.primary,
-              metaColor: DIM,
-              nameFill: `rgba(${theme.primaryRgb},0.12)`,
-              metaFill: 'rgba(11,33,48,0.05)',
-              stroke: LINE,
-              highColor: '#1F7A5C',
-              nameFamily: FAMILY_WENKAI,
-            }
-          );
+          await drawHeroChips(context, ref.hero, { x, y: chipTop, w: 196, h: 88 }, chipStyle);
           continue;
         }
-        const valueFont = `700 38px "JetBrains Mono", "Noto Sans SC", monospace`;
         context.font = valueFont;
         await document.fonts.load(valueFont, ref.value);
         context.fillStyle = theme.primary;

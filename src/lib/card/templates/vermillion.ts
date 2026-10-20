@@ -7,14 +7,17 @@ import {
   FAMILY_TITLE,
   FAMILY_WENKAI,
   FAMILY_SUBTITLE,
+  HERO_CHIP_HEIGHT_RATIO,
   buildQrImage,
   drawHeroChips,
   drawQrFramed,
   drawRuns,
   fitText,
   formatDate,
+  inkCenterY,
   layoutCaption,
   roundRectPath,
+  type HeroChipsStyle,
 } from '../shared';
 
 /* 应援 · 釉里红：宣纸米底 + 釉里红大字 + 圆形朱印 + 右侧竖排「无言应援」+ 四角印刷角线。
@@ -172,6 +175,13 @@ async function drawStats(ctx: TemplateContext, y: number): Promise<void> {
     }
   }
 
+  // 英雄胶囊首行按数值的墨迹中心垂直对齐，避免整组沉到数字下方
+  const valueBaselineY = y + 24;
+  context.font = valueFont(valueSize);
+  const valueCenterY = inkCenterY(context, plain[0]?.value ?? '0', valueBaselineY, valueSize);
+  const chipStyle = heroChipStyle();
+  const chipTop = valueCenterY - Math.round(chipStyle.nameSize * HERO_CHIP_HEIGHT_RATIO) / 2;
+
   for (const [i, ref] of visible.entries()) {
     const x = left + i * 306;
     await drawText(
@@ -183,18 +193,18 @@ async function drawStats(ctx: TemplateContext, y: number): Promise<void> {
       'rgba(58,43,36,0.6)'
     );
     if (ref.hero) {
-      await drawHeroChips(context, ref.hero, { x, y: y - 14, w: 282, h: 96 }, heroChipStyle());
+      await drawHeroChips(context, ref.hero, { x, y: chipTop, w: 282, h: 96 }, chipStyle);
       continue;
     }
     context.font = valueFont(valueSize);
     await document.fonts.load(context.font, ref.value);
     context.fillStyle = i === 0 ? VERMILLION : INK;
     context.textBaseline = 'alphabetic';
-    context.fillText(ref.value, x, y + 24);
+    context.fillText(ref.value, x, valueBaselineY);
   }
 }
 
-function heroChipStyle() {
+function heroChipStyle(): HeroChipsStyle {
   return {
     nameSize: 32,
     metaSize: 22,
@@ -205,6 +215,7 @@ function heroChipStyle() {
     stroke: 'rgba(58,43,36,0.35)',
     highColor: WIN_HIGH,
     radiusRatio: 0.16,
+    valign: 'top',
   };
 }
 

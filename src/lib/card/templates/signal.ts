@@ -4,6 +4,7 @@ import {
   CARD_HEIGHT,
   FAMILY_SUBTITLE,
   FAMILY_WENKAI,
+  HERO_CHIP_HEIGHT_RATIO,
   fitText,
   CARD_WIDTH,
   FAMILY_TITLE,
@@ -16,8 +17,10 @@ import {
   drawRuns,
   drawText,
   formatDate,
+  inkCenterY,
   layoutCaption,
   roundRectPath,
+  type HeroChipsStyle,
 } from '../shared';
 
 const FONT_TITLE_HEADER = `400 70px ${FAMILY_TITLE}`;
@@ -243,6 +246,26 @@ async function draw(ctx: TemplateContext): Promise<void> {
       context.lineTo(720, 1094);
       context.stroke();
 
+      // 胶囊首行与数字墨迹共用中线，整组从该中线向下排，避免沉到数字下方
+      const valueFont = `700 38px "JetBrains Mono", "Noto Sans SC", monospace`;
+      const sample = visible.find((ref) => !ref.hero)?.value ?? '0';
+      context.font = valueFont;
+      await document.fonts.load(valueFont, sample);
+      const valueCenterY = inkCenterY(context, sample, 1194, 38);
+      const chipStyle: HeroChipsStyle = {
+        nameSize: 28,
+        metaSize: 20,
+        nameColor: theme.primary,
+        metaColor: '#6F93A3',
+        nameFill: `rgba(${theme.primaryRgb},0.16)`,
+        metaFill: 'rgba(36,67,90,0.45)',
+        stroke: 'rgba(60,100,130,0.6)',
+        highColor: '#5FD3A6',
+        nameFamily: FAMILY_SUBTITLE,
+        valign: 'top',
+      };
+      const chipTop = valueCenterY - Math.round(chipStyle.nameSize * HERO_CHIP_HEIGHT_RATIO) / 2;
+
       for (const [i, ref] of visible.entries()) {
         const x = 92 + i * 216;
         await drawText(
@@ -254,26 +277,11 @@ async function draw(ctx: TemplateContext): Promise<void> {
           '#6F93A3'
         );
         if (ref.hero) {
-          await drawHeroChips(
-            context,
-            ref.hero,
-            { x, y: 1160, w: 196, h: 88 },
-            {
-              nameSize: 28,
-              metaSize: 20,
-              nameColor: theme.primary,
-              metaColor: '#6F93A3',
-              nameFill: `rgba(${theme.primaryRgb},0.16)`,
-              metaFill: 'rgba(36,67,90,0.45)',
-              stroke: 'rgba(60,100,130,0.6)',
-              highColor: '#5FD3A6',
-              nameFamily: FAMILY_SUBTITLE,
-            }
-          );
+          await drawHeroChips(context, ref.hero, { x, y: chipTop, w: 196, h: 88 }, chipStyle);
           continue;
         }
-        context.font = `700 38px "JetBrains Mono", "Noto Sans SC", monospace`;
-        await document.fonts.load(`700 38px "JetBrains Mono", "Noto Sans SC", monospace`, ref.value);
+        context.font = valueFont;
+        await document.fonts.load(valueFont, ref.value);
         context.fillStyle = theme.primary;
         context.fillText(ref.value, x, 1194);
       }
