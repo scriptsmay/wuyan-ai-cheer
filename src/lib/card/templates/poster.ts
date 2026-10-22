@@ -42,6 +42,68 @@ const BACKGROUNDS: PosterBg[] = [
 const COPY_MARGIN = 88;
 const COPY_WIDTH = 1080 - COPY_MARGIN * 2;
 
+interface PosterLayout {
+  /** 文案块起始基线的最小值（人像版式的面部安全线） */
+  copyTop: number;
+  /** 手绘引号基线相对文案首行基线的上移量：略高于首行字面，点题但不压字 */
+  quoteGap: number;
+  quoteSize: number;
+  /** 人像暗衬起点相对文案首行基线的上移量，只覆盖文案块，不压暗面部 */
+  scrimGap: number;
+  copyMaxSize: number;
+  copyMinSize: number;
+  copyLineHeight: number;
+  captionMaxSize: number;
+  captionMinSize: number;
+  captionGap: number;
+  /** 标语底边允许到达的最低位置，给数据区留白 */
+  contentBottom: number;
+  /** 文案块向下吸附到 contentBottom，行数少时整体更靠下 */
+  bottomAnchor: boolean;
+  /** 数据区整体缩放：人像版式缩一档，与右侧二维码同处底部一行 */
+  statsScale: number;
+  statsY: number;
+}
+
+const LANDSCAPE_LAYOUT: PosterLayout = {
+  copyTop: 430,
+  quoteGap: 114,
+  quoteSize: 96,
+  scrimGap: 166,
+  copyMaxSize: 132,
+  copyMinSize: 56,
+  copyLineHeight: 1.28,
+  captionMaxSize: 42,
+  captionMinSize: 28,
+  captionGap: 84,
+  contentBottom: 1000,
+  bottomAnchor: false,
+  statsScale: 1,
+  statsY: 1088,
+};
+
+/**
+ * 选手相片版式：文案整体沉到人物面部以下，字号再降一档。数据区缩到 0.8
+ * 并下移，与右侧二维码同处底部一行（标签墨迹顶边约 1237，与二维码框顶边
+ * 1236 齐平）；由此腾出的下半部空间全部给文案，末行/标语紧贴数据区。
+ */
+const PORTRAIT_LAYOUT: PosterLayout = {
+  copyTop: 610,
+  quoteGap: 68,
+  quoteSize: 56,
+  scrimGap: 110,
+  copyMaxSize: 76,
+  copyMinSize: 44,
+  copyLineHeight: 1.22,
+  captionMaxSize: 28,
+  captionMinSize: 20,
+  captionGap: 22,
+  contentBottom: 1210,
+  bottomAnchor: true,
+  statsScale: 0.8,
+  statsY: 1290,
+};
+
 interface LoadedPosterBg {
   image: HTMLImageElement | null;
   bg: PosterBg;
@@ -94,30 +156,37 @@ function drawCopyScrim(context: CanvasRenderingContext2D, top: number, bottom: n
   context.drawImage(layer, 0, top);
 }
 
-async function drawQuoteMarks(context: CanvasRenderingContext2D, x: number, y: number, color: string): Promise<void> {
-  const font = `400 96px ${FAMILY_WENKAI}`;
+async function drawQuoteMarks(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number,
+  color: string
+): Promise<void> {
+  const font = `400 ${size}px ${FAMILY_WENKAI}`;
   context.font = font;
   await document.fonts.load(font, '“');
   context.fillStyle = color;
   context.fillText('“', x, y);
 }
 
-async function drawStats(ctx: TemplateContext, y: number): Promise<void> {
+async function drawStats(ctx: TemplateContext, y: number, scale = 1): Promise<void> {
   const { ctx: context, input } = ctx;
   const labelColor = 'rgba(255,255,255,0.66)';
   const valueColor = WHITE;
+  const px = (value: number) => Math.round(value * scale);
 
   const visible = input.showRefs === false ? [] : selectVisibleRefs(input.refs, ctx.rng, CARD_STAT_COUNT);
   if (visible.length) {
     // 胶囊首行与数字墨迹共用中线，整组从该中线向下排，避免沉到数字下方
-    const valueFont = `700 64px "JetBrains Mono", "Noto Sans SC", monospace`;
+    const valueFont = `700 ${px(64)}px "JetBrains Mono", "Noto Sans SC", monospace`;
     const sample = visible.find((ref) => !ref.hero)?.value ?? '0';
     context.font = valueFont;
     await document.fonts.load(valueFont, sample);
-    const valueCenterY = inkCenterY(context, sample, y + 26, 64);
+    const valueCenterY = inkCenterY(context, sample, y + px(26), px(64));
     const chipStyle: HeroChipsStyle = {
-      nameSize: 32,
-      metaSize: 22,
+      nameSize: px(32),
+      metaSize: px(22),
       nameColor: WHITE,
       metaColor: 'rgba(255,255,255,0.92)',
       nameFill: 'rgba(255,255,255,0.14)',
@@ -130,23 +199,23 @@ async function drawStats(ctx: TemplateContext, y: number): Promise<void> {
     const chipTop = valueCenterY - Math.round(chipStyle.nameSize * HERO_CHIP_HEIGHT_RATIO) / 2;
 
     for (const [i, ref] of visible.entries()) {
-      const x = 92 + i * 306;
+      const x = 92 + i * px(306);
       await drawText(
         context,
         ref.hero ? heroEyebrowOf(ref) : ref.label,
         x,
-        y - 46,
-        `500 24px ${FAMILY_BODY}`,
+        y - px(46),
+        `500 ${px(24)}px ${FAMILY_BODY}`,
         labelColor
       );
       if (ref.hero) {
-        await drawHeroChips(context, ref.hero, { x, y: chipTop, w: 282, h: 96 }, chipStyle);
+        await drawHeroChips(context, ref.hero, { x, y: chipTop, w: px(282), h: px(96) }, chipStyle);
         continue;
       }
       context.font = valueFont;
       await document.fonts.load(valueFont, ref.value);
       context.fillStyle = valueColor;
-      context.fillText(ref.value, x, y + 26);
+      context.fillText(ref.value, x, y + px(26));
     }
     return;
   }
@@ -157,8 +226,8 @@ async function drawStats(ctx: TemplateContext, y: number): Promise<void> {
   for (const w of widths) {
     context.globalAlpha = 0.72;
     context.fillStyle = WHITE;
-    context.fillRect(x, y - 8, w, 6);
-    x += w + 24;
+    context.fillRect(x, y - px(8), px(w), px(6));
+    x += px(w) + px(24);
   }
   context.globalAlpha = 1;
 }
@@ -166,6 +235,7 @@ async function drawStats(ctx: TemplateContext, y: number): Promise<void> {
 async function draw(ctx: TemplateContext): Promise<void> {
   const { ctx: context, input, dateLabel } = ctx;
   const { image, bg, portrait } = await resolvePosterBg(input);
+  const layout = portrait ? PORTRAIT_LAYOUT : LANDSCAPE_LAYOUT;
 
   // ---- 背景：cover 铺满 + 上下渐变压暗 ----
   if (image) {
@@ -197,24 +267,27 @@ async function draw(ctx: TemplateContext): Promise<void> {
   context.fillRect(0, 940, 1080, 500);
 
   // ---- 文案排版（先算后画：暗衬范围依赖实际行数）----
-  const copyTop = 430;
-  const captionLimit = 1000;
-  const captionGap = 84;
+  const { captionGap } = layout;
   const caption = await layoutCaption(context, input.emojiCaption, FAMILY_BODY, {
     maxWidth: COPY_WIDTH - 60,
-    maxSize: 42,
-    minSize: 28,
+    maxSize: layout.captionMaxSize,
+    minSize: layout.captionMinSize,
     lineHeightRatio: 1.3,
   });
+  const captionBlock = caption.lines.length ? captionGap + caption.height : 0;
   const fitted = await fitText(context, input.line, FAMILY_WENKAI, {
     maxWidth: COPY_WIDTH,
     maxLines: 5,
-    maxSize: 132,
-    minSize: 56,
-    lineHeightRatio: 1.28,
+    maxSize: layout.copyMaxSize,
+    minSize: layout.copyMinSize,
+    lineHeightRatio: layout.copyLineHeight,
     weight: 400,
-    maxHeight: captionLimit - copyTop - (caption.lines.length ? captionGap + caption.height : 0),
+    maxHeight: layout.contentBottom - layout.copyTop - captionBlock,
   });
+  // 底部吸附：按实际行数从 contentBottom 反推首行基线，末行/标语紧贴数据区
+  const copyTop = layout.bottomAnchor
+    ? Math.max(layout.copyTop, layout.contentBottom - captionBlock - (fitted.lines.length - 1) * fitted.lineHeight)
+    : layout.copyTop;
 
   // 人像背景：文案层下方铺一层柔和暗衬，浅色衣服/复杂人脸前也读得清
   if (portrait) {
@@ -222,7 +295,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
     const captionBottom = caption.lines.length
       ? copyBottom + captionGap + (caption.lines.length - 1) * caption.lineHeight + caption.size
       : copyBottom;
-    drawCopyScrim(context, 264, Math.min(1016, captionBottom + 36));
+    drawCopyScrim(context, copyTop - layout.scrimGap, Math.min(layout.statsY - 70, captionBottom + 36));
   }
 
   // ---- 眉头（品牌）----
@@ -236,7 +309,13 @@ async function draw(ctx: TemplateContext): Promise<void> {
   );
 
   // ---- 主文案：文楷白字 + 细描边（保证任何背景上可读），手绘引号点题 ----
-  await drawQuoteMarks(context, COPY_MARGIN - 10, 316, 'rgba(255,255,255,0.85)');
+  await drawQuoteMarks(
+    context,
+    COPY_MARGIN - 10,
+    copyTop - layout.quoteGap,
+    layout.quoteSize,
+    'rgba(255,255,255,0.85)'
+  );
 
   context.font = fitted.font;
   await document.fonts.load(fitted.font, input.line);
@@ -271,7 +350,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
   }
 
   // ---- 数据区 ----
-  await drawStats(ctx, 1088);
+  await drawStats(ctx, layout.statsY, layout.statsScale);
 
   // // ---- 日期（右下，参考图样式）----
   // const today = formatDate(new Date());

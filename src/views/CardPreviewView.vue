@@ -2,8 +2,8 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { renderCheerCard, type CardInput, type RenderedCard } from '../lib/card-renderer';
 import { CARD_STAT_COUNT, mergeCardRefs } from '../lib/card/selection';
-import { generateCheer } from '../lib/api';
-import type { AbilitiesDisplay, Checkin, CheerRef, Mood } from '../types';
+import { generateCheer, getMaterials } from '../lib/api';
+import type { AbilitiesDisplay, Checkin, CheerRef, Material, Mood } from '../types';
 
 /* 仅 dev 构建可用的模板预览页（路由在 router.ts 中按 import.meta.env.DEV 注册） */
 
@@ -160,6 +160,56 @@ type PreviewAppearance = 'auto' | 'light' | 'dark';
 const APPEARANCES: PreviewAppearance[] = ['auto', 'light', 'dark'];
 const appearance = ref<PreviewAppearance>('auto');
 
+/* 卡片元素开关：二维码 / 数据区，切换后整批重绘 */
+const showQr = ref(true);
+const showRefs = ref(true);
+
+/* 选手相片：仅 poster 模板读取 background，素材来自 /api/materials */
+const usePortrait = ref(false);
+const portraitLoading = ref(false);
+const materialPool = ref<Material[]>([]);
+const materialIndex = ref(0);
+let materialPoolFailed = false;
+
+async function ensureMaterialPool(): Promise<Material[]> {
+  if (materialPool.value.length) return materialPool.value;
+  if (materialPoolFailed) return [];
+  portraitLoading.value = true;
+  try {
+    materialPool.value = await getMaterials();
+    return materialPool.value;
+  } catch (err) {
+    console.warn('[preview] 素材池加载失败', err);
+    materialPoolFailed = true;
+    return [];
+  } finally {
+    portraitLoading.value = false;
+  }
+}
+
+function portraitBackground(): { src: string; focusY: number } | undefined {
+  const pool = materialPool.value;
+  if (!pool.length) return undefined;
+  const material = pool[materialIndex.value % pool.length];
+  if (!material?.url) return undefined;
+  const focusY = typeof material.focus_y === 'number' && Number.isFinite(material.focus_y) ? material.focus_y : 0.5;
+  return { src: material.url, focusY };
+}
+
+async function togglePortrait(): Promise<void> {
+  const next = !usePortrait.value;
+  if (next) {
+    // 重新开启视为一次显式重试，允许再打一次素材接口
+    materialPoolFailed = false;
+    if (!(await ensureMaterialPool()).length) {
+      alert('素材池加载失败：请确认 /api/materials 可用，或稍后重试');
+      return;
+    }
+  }
+  usePortrait.value = next;
+  await renderAll();
+}
+
 function getLineForCase(caseKey: string, index: number): string {
   if (selectedAiLineIndex.value >= 0 && aiLines.value[selectedAiLineIndex.value]) {
     return aiLines.value[selectedAiLineIndex.value] ?? '';
@@ -171,6 +221,8 @@ function getLineForCase(caseKey: string, index: number): string {
 }
 
 async function renderCase(c: CaseDef, index: number = 0): Promise<void> {
+  // 相片只作用于 poster：其它模板会忽略 background，这里明确不透传
+  const background = usePortrait.value && c.key === 'poster' ? portraitBackground() : undefined;
   try {
     cards.value[c.key] = await renderCheerCard({
       line: getLineForCase(c.key, index),
@@ -178,13 +230,14 @@ async function renderCase(c: CaseDef, index: number = 0): Promise<void> {
       refs: activeRefs.value,
       abilitiesDisplay: activeAbilities.value,
       sourceSnapshotAt: activeSnapshotAt.value,
-      showQr: true,
-      showRefs: true,
+      showQr: showQr.value,
+      showRefs: showRefs.value,
       mood: c.mood,
       checkin: c.checkin ? mockCheckin() : undefined,
       templateId: c.templateId as never,
       appearance: appearance.value === 'auto' ? c.appearance : appearance.value,
       variant: variants.value[c.key] ?? globalVariant.value,
+      background,
     });
   } catch (error) {
     console.error(`[preview] ${c.key} 渲染失败`, error);
@@ -202,12 +255,15 @@ async function renderAll(): Promise<void> {
 function reroll(c: CaseDef): void {
   const idx = cases.findIndex((item) => item.key === c.key);
   variants.value[c.key] = (variants.value[c.key] ?? globalVariant.value) + 1;
+  // 相片模式下点卡片 = 换下一张素材，和结果面板的「换一换」语义一致
+  if (usePortrait.value && c.key === 'poster') materialIndex.value += 1;
   renderCase(c, idx >= 0 ? idx : 0);
 }
 
 async function rerollAll(): Promise<void> {
   globalVariant.value += 1;
   variants.value = {};
+  if (usePortrait.value) materialIndex.value += 1;
   await renderAll();
 }
 
@@ -300,6 +356,7 @@ function selectAiLine(idx: number): void {
 }
 
 watch(appearance, renderAll);
+watch([showQr, showRefs], renderAll);
 
 onMounted(async () => {
   // 页面进入时优先尝试联网拉取真实 KPL 数据
@@ -350,6 +407,44 @@ onMounted(async () => {
 
         <button v-if="dataSourceStatus !== 'default'" type="button" class="btn-action reset" @click="resetToDefault">
           重置
+        </button>
+
+        <button
+          type="button"
+          class="btn-action"
+          :class="{ primary: showQr }"
+          title="控制卡片右下角二维码的显示"
+          @click="showQr = !showQr"
+        >
+          {{ showQr ? '🔳 二维码：开' : '🔳 二维码：关' }}
+        </button>
+
+        <button
+          type="button"
+          class="btn-action"
+          :class="{ primary: showRefs }"
+          title="控制卡片数据区（赛季统计 / 能力分榜）的显示"
+          @click="showRefs = !showRefs"
+        >
+          {{ showRefs ? '📊 数据：开' : '📊 数据：关' }}
+        </button>
+
+        <button
+          v-if="cases.some((c) => c.key === 'poster')"
+          type="button"
+          class="btn-action"
+          :class="{ primary: usePortrait }"
+          :disabled="portraitLoading"
+          title="用 /api/materials 的选手相片作为 poster 背景；点击卡片可换下一张"
+          @click="togglePortrait"
+        >
+          {{
+            portraitLoading
+              ? '相片加载中…'
+              : usePortrait
+                ? `📷 选手相片：开（${(materialIndex % (materialPool.length || 1)) + 1}/${materialPool.length || 0}）`
+                : '📷 选手相片：关'
+          }}
         </button>
 
         <div class="seg" role="group" aria-label="明暗外观">
@@ -425,7 +520,10 @@ onMounted(async () => {
 
     <div class="preview-grid" :class="{ single: cases.length === 1 }">
       <figure v-for="c in cases" :key="c.key">
-        <figcaption>{{ c.label }}</figcaption>
+        <figcaption>
+          {{ c.label }}
+          <template v-if="usePortrait && c.key === 'poster'"> · 选手相片</template>
+        </figcaption>
         <img v-if="cards[c.key]" :src="cards[c.key]!.dataUrl" :alt="c.label" @click="reroll(c)" />
         <p v-else class="rendering">渲染中…</p>
         <small>variant {{ variants[c.key] ?? globalVariant }} · 点击图片单独换一个</small>
