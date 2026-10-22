@@ -965,8 +965,11 @@ export function dayOfYear(dateLabel: string): number {
 export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
+    // 必须在 src 之前设置：跨域图床素材不回 CORS 头时，
+    // 未标记 anonymous 的图会污染画布，canvas.toBlob 直接抛 SecurityError
+    image.crossOrigin = 'anonymous';
     image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error('二维码绘制失败'));
+    image.onerror = () => reject(new Error('图片加载失败'));
     image.src = src;
   });
 }

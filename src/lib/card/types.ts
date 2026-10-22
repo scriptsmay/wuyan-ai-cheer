@@ -31,6 +31,8 @@ export interface CardInput {
   variant?: number;
   // 强制指定模板（dev 预览页用；生产 UI 不传，走种子选择）
   templateId?: TemplateId;
+  // 指定背景图（「选手相片」模式）：仅 poster 模板消费，缺省走本地风景图
+  background?: { src: string; focusY: number };
   // 明暗外观：缺省从 <html data-theme> 读取，预览页/单测可显式覆盖
   appearance?: CardAppearance;
 }

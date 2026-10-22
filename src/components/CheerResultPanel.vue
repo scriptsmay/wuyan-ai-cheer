@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Check, Clipboard, Download, Image as ImageIcon, RefreshCw, Shuffle } from '@lucide/vue';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { getMaterials } from '../lib/api';
 import { copyText } from '../lib/clipboard';
 import { downloadCard, requiresLongPressSave } from '../lib/download';
 import { renderCheerCard, type RenderedCard } from '../lib/card-renderer';
-import type { CheerResult, Checkin, Mood } from '../types';
+import type { CheerResult, Checkin, Material, Mood } from '../types';
 
 const props = defineProps<{
   result: CheerResult;
@@ -23,6 +24,13 @@ const showQr = ref(false);
 const showRefs = ref(true);
 // 换一换：同一天内主动换样式时递增，参与卡片种子派生
 const variant = ref(0);
+// 选手相片：独立模式，开启后固定 poster 模板并轮换素材图
+const usePortrait = ref(false);
+const materialIndex = ref(0);
+const materialPool = ref<Material[]>([]);
+let materialPoolReady = false;
+let materialPoolFailed = false;
+let lastPortrait = false;
 
 // ---- Manual editing state ----
 const editingLine = ref('');
@@ -88,10 +96,39 @@ async function handleCopy() {
   }, 1600);
 }
 
+/** 素材池只在首次勾选时拉取；失败也不缓存，下次重新开启相片模式会再试一次 */
+async function ensureMaterialPool(): Promise<Material[]> {
+  if (materialPoolReady) return materialPool.value;
+  if (materialPoolFailed) return [];
+  try {
+    materialPool.value = await getMaterials();
+    materialPoolReady = true;
+    return materialPool.value;
+  } catch {
+    // 接口超时 / 无启用素材：静默降级本地风景图，不在预览层报错
+    materialPoolFailed = true;
+    return [];
+  }
+}
+
+async function resolvePortraitBackground(): Promise<{ src: string; focusY: number } | null> {
+  const pool = await ensureMaterialPool();
+  if (!pool.length) return null;
+  const material = pool[materialIndex.value % pool.length];
+  if (!material?.url) return null;
+  const focusY =
+    typeof material.focus_y === 'number' && Number.isFinite(material.focus_y) ? material.focus_y : 0.5;
+  return { src: material.url, focusY };
+}
+
 async function handleRender() {
+  // 重新开启相片模式视为一次显式重试，允许再打一次素材接口
+  if (usePortrait.value && !lastPortrait) materialPoolFailed = false;
+  lastPortrait = usePortrait.value;
   cardLoading.value = true;
   cardError.value = '';
   try {
+    const background = usePortrait.value ? await resolvePortraitBackground() : null;
     card.value = await renderCheerCard({
       line: editingLine.value,
       emojiCaption: editingCaption.value,
@@ -103,6 +140,9 @@ async function handleRender() {
       showRefs: showRefs.value,
       mood: props.mood,
       variant: variant.value,
+      // 相片模式固定大字报模板，不让种子算法把照片静默丢掉
+      templateId: usePortrait.value ? 'poster' : undefined,
+      background: background ?? undefined,
     });
   } catch (error) {
     cardError.value = error instanceof Error ? error.message : '应援卡生成失败';
@@ -117,6 +157,7 @@ function handleDownload() {
 
 function handleShuffle() {
   variant.value += 1;
+  if (usePortrait.value) materialIndex.value += 1;
   handleRender();
 }
 </script>
@@ -208,6 +249,25 @@ function handleShuffle() {
             <span class="toggle-thumb" />
           </span>
           <span class="toggle-label">赛季数据</span>
+        </label>
+        <label class="qr-toggle" :class="{ disabled: cardLoading }">
+          <span
+            class="toggle-track"
+            role="switch"
+            :aria-checked="usePortrait"
+            tabindex="0"
+            @click="cardLoading || (usePortrait = !usePortrait) || handleRender()"
+          >
+            <input
+              v-model="usePortrait"
+              type="checkbox"
+              :disabled="cardLoading"
+              class="toggle-input"
+              @change="handleRender"
+            />
+            <span class="toggle-thumb" />
+          </span>
+          <span class="toggle-label">📷 选手相片</span>
         </label>
       </div>
       <button v-else class="card-placeholder" type="button" :disabled="cardLoading" @click="handleRender">

@@ -1,7 +1,16 @@
 import { clearStoredAuth, emitAuthChange, getAccessToken } from './auth';
 import { getClientId } from './client-id';
 import { pairSseEvents } from './sse';
-import type { ApiErrorBody, AppConfig, CheerResult, CheckinResult, CheckinStats, Mood, MyCheckin } from '../types';
+import type {
+  ApiErrorBody,
+  AppConfig,
+  CheerResult,
+  CheckinResult,
+  CheckinStats,
+  Material,
+  Mood,
+  MyCheckin,
+} from '../types';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/u, '');
 const AUTH_TOKEN = import.meta.env.VITE_AUTH_TOKEN || '';
@@ -308,6 +317,29 @@ export function askQuestion(q: string, _requestId: string): Promise<{ answer: st
 
 export function getConfig(): Promise<AppConfig> {
   return apiRequest<AppConfig>('/api/config', { auth: false });
+}
+
+/** 素材池缓存：文本防抖重绘只走内存，不再重复请求素材接口 */
+const MATERIALS_CACHE_TTL_MS = 5 * 60 * 1000;
+let materialsCache: { at: number; data: Material[] } | null = null;
+let materialsPending: Promise<Material[]> | null = null;
+
+export function getMaterials(): Promise<Material[]> {
+  if (materialsCache && Date.now() - materialsCache.at < MATERIALS_CACHE_TTL_MS) {
+    return Promise.resolve(materialsCache.data);
+  }
+  if (materialsPending) return materialsPending;
+  materialsPending = apiRequest<Material[]>('/api/materials', { auth: false })
+    .then((data) => {
+      const list = Array.isArray(data) ? data : [];
+      materialsCache = { at: Date.now(), data: list };
+      return list;
+    })
+    .finally(() => {
+      // 失败不写缓存：下次勾选相片模式时还能重试
+      materialsPending = null;
+    });
+  return materialsPending;
 }
 
 export function verifySession(): Promise<{

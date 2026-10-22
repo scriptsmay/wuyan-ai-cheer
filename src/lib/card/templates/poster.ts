@@ -1,4 +1,4 @@
-import type { CardTemplate, TemplateContext } from '../types';
+import type { CardInput, CardTemplate, TemplateContext } from '../types';
 import { CARD_STAT_COUNT, heroEyebrowOf, selectVisibleRefs } from '../selection';
 import {
   FAMILY_BODY,
@@ -41,6 +41,58 @@ const BACKGROUNDS: PosterBg[] = [
 /** 文案区可用宽度（左右边距对称） */
 const COPY_MARGIN = 88;
 const COPY_WIDTH = 1080 - COPY_MARGIN * 2;
+
+interface LoadedPosterBg {
+  image: HTMLImageElement | null;
+  bg: PosterBg;
+  /** 是否使用「选手相片」素材：决定是否叠加文案暗衬 */
+  portrait: boolean;
+}
+
+async function resolvePosterBg(input: CardInput): Promise<LoadedPosterBg> {
+  const remote = input.background;
+  if (remote?.src) {
+    const focusY = Number.isFinite(remote.focusY) ? Math.min(1, Math.max(0, remote.focusY)) : 0.5;
+    const image = await loadImage(remote.src).catch(() => null);
+    // 人像素材取图失败（图床故障 / CORS 被拒）：回落本地风景图，不出空白卡
+    if (image) return { image, bg: { src: remote.src, focusY, topShade: 0.58 }, portrait: true };
+  }
+  // 本地背景不参与随机：由 variant 决定，保证「换一换」必换背景
+  // （两张图随机 pick 有 50% 概率停在原图，体验上等于没换）
+  const bg = BACKGROUNDS[(input.variant ?? 0) % BACKGROUNDS.length]!;
+  const image = await loadImage(bg.src).catch(() => null);
+  return { image, bg, portrait: false };
+}
+
+/**
+ * 人像背景的文案暗衬：左侧重、右侧透明，纵向两端羽化。
+ * 横向淡出在离屏 canvas 上用 destination-in 合成，避免直接叠矩形出现硬边。
+ */
+function drawCopyScrim(context: CanvasRenderingContext2D, top: number, bottom: number): void {
+  const width = 960;
+  const height = Math.round(bottom - top);
+  if (height <= 0) return;
+  const layer = document.createElement('canvas');
+  layer.width = width;
+  layer.height = height;
+  const layerCtx = layer.getContext('2d');
+  if (!layerCtx) return;
+  const vertical = layerCtx.createLinearGradient(0, 0, 0, height);
+  vertical.addColorStop(0, 'rgba(16,12,9,0)');
+  vertical.addColorStop(0.16, 'rgba(16,12,9,0.36)');
+  vertical.addColorStop(0.84, 'rgba(16,12,9,0.36)');
+  vertical.addColorStop(1, 'rgba(16,12,9,0)');
+  layerCtx.fillStyle = vertical;
+  layerCtx.fillRect(0, 0, width, height);
+  const horizontal = layerCtx.createLinearGradient(0, 0, width, 0);
+  horizontal.addColorStop(0, 'rgba(0,0,0,1)');
+  horizontal.addColorStop(0.55, 'rgba(0,0,0,0.7)');
+  horizontal.addColorStop(1, 'rgba(0,0,0,0)');
+  layerCtx.globalCompositeOperation = 'destination-in';
+  layerCtx.fillStyle = horizontal;
+  layerCtx.fillRect(0, 0, width, height);
+  context.drawImage(layer, 0, top);
+}
 
 async function drawQuoteMarks(context: CanvasRenderingContext2D, x: number, y: number, color: string): Promise<void> {
   const font = `400 96px ${FAMILY_WENKAI}`;
@@ -113,12 +165,9 @@ async function drawStats(ctx: TemplateContext, y: number): Promise<void> {
 
 async function draw(ctx: TemplateContext): Promise<void> {
   const { ctx: context, input, dateLabel } = ctx;
-  // 背景不参与随机：直接由 variant 决定，保证「换一换」必换背景
-  // （两张图随机 pick 有 50% 概率停在原图，体验上等于没换）
-  const bg = BACKGROUNDS[(input.variant ?? 0) % BACKGROUNDS.length]!;
+  const { image, bg, portrait } = await resolvePosterBg(input);
 
   // ---- 背景：cover 铺满 + 上下渐变压暗 ----
-  const image = await loadImage(bg.src).catch(() => null);
   if (image) {
     const scale = Math.max(1080 / image.width, 1440 / image.height);
     const w = image.width * scale;
@@ -143,23 +192,11 @@ async function draw(ctx: TemplateContext): Promise<void> {
 
   const bottomShade = context.createLinearGradient(0, 940, 0, 1440);
   bottomShade.addColorStop(0, 'rgba(20,16,12,0)');
-  bottomShade.addColorStop(1, 'rgba(20,16,12,0.42)');
+  bottomShade.addColorStop(1, `rgba(20,16,12,${portrait ? 0.58 : 0.42})`);
   context.fillStyle = bottomShade;
   context.fillRect(0, 940, 1080, 500);
 
-  // ---- 眉头（品牌）----
-  await drawText(
-    context,
-    'VICTORY · KPL WUYAN',
-    COPY_MARGIN,
-    148,
-    `700 26px "Inter", "Noto Sans SC", sans-serif`,
-    'rgba(255,255,255,0.92)'
-  );
-
-  // ---- 主文案：文楷白字 + 细描边（保证任何背景上可读），手绘引号点题 ----
-  await drawQuoteMarks(context, COPY_MARGIN - 10, 316, 'rgba(255,255,255,0.85)');
-
+  // ---- 文案排版（先算后画：暗衬范围依赖实际行数）----
   const copyTop = 430;
   const captionLimit = 1000;
   const captionGap = 84;
@@ -178,13 +215,36 @@ async function draw(ctx: TemplateContext): Promise<void> {
     weight: 400,
     maxHeight: captionLimit - copyTop - (caption.lines.length ? captionGap + caption.height : 0),
   });
+
+  // 人像背景：文案层下方铺一层柔和暗衬，浅色衣服/复杂人脸前也读得清
+  if (portrait) {
+    const copyBottom = copyTop + (fitted.lines.length - 1) * fitted.lineHeight;
+    const captionBottom = caption.lines.length
+      ? copyBottom + captionGap + (caption.lines.length - 1) * caption.lineHeight + caption.size
+      : copyBottom;
+    drawCopyScrim(context, 264, Math.min(1016, captionBottom + 36));
+  }
+
+  // ---- 眉头（品牌）----
+  await drawText(
+    context,
+    'VICTORY · KPL WUYAN',
+    COPY_MARGIN,
+    148,
+    `700 26px "Inter", "Noto Sans SC", sans-serif`,
+    'rgba(255,255,255,0.92)'
+  );
+
+  // ---- 主文案：文楷白字 + 细描边（保证任何背景上可读），手绘引号点题 ----
+  await drawQuoteMarks(context, COPY_MARGIN - 10, 316, 'rgba(255,255,255,0.85)');
+
   context.font = fitted.font;
   await document.fonts.load(fitted.font, input.line);
   fitted.lines.forEach((row, index) => {
     const baseline = copyTop + index * fitted.lineHeight;
     // 极轻落影 + 细描边：仅保证复杂背景上的可读性，不形成重影
-    context.shadowColor = 'rgba(20,16,12,0.35)';
-    context.shadowBlur = 10;
+    context.shadowColor = portrait ? 'rgba(16,12,9,0.45)' : 'rgba(20,16,12,0.35)';
+    context.shadowBlur = portrait ? 16 : 10;
     context.shadowOffsetY = 2;
     context.fillStyle = WHITE;
     context.fillText(row, COPY_MARGIN, baseline);

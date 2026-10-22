@@ -96,3 +96,15 @@ export interface AppConfig {
   ask_daily_limit?: number;
   cheer_daily_limit?: number;
 }
+
+/** 后端 cheer_materials 的公开投影，仅启用的素材会下发 */
+export interface Material {
+  _id: string;
+  url: string;
+  thumb_url?: string;
+  category: string;
+  album?: string;
+  /** 竖向焦点 0~1，cover 裁切时对齐该位置 */
+  focus_y?: number;
+  created_at?: string;
+}
