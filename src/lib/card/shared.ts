@@ -15,13 +15,18 @@ export const CARD_HEIGHT = 1440;
  * - 标签说明：Noto Sans SC
  * - 数字：JetBrains Mono
  * - 英文装饰：Inter
+ *
+ * FAMILY_TITLE / FAMILY_WENKAI 首位是运行时占位名：
+ * - 线上用户端：未注入该 @font-face → 浏览器跳过该项，落到后面的原有字体，行为与改造前完全一致；
+ * - 服务端出卡：薄服务注入 @font-face { font-family: "--wuyan-*"; ... } 后，Canvas 原生优先命中。
+ * 模板代码仍引用这些常量，无需改动任何一处绘制调用。
  */
-export const FAMILY_TITLE = '"ZCOOL QingKe HuangYou"';
+export const FAMILY_TITLE = '"--wuyan-title", "ZCOOL QingKe HuangYou"';
 export const FAMILY_SUBTITLE = '"HarmonyOS Sans SC", "Noto Sans SC", sans-serif';
 export const FAMILY_BODY = '"Noto Sans SC", sans-serif';
 export const FAMILY_MONO = '"JetBrains Mono", "Noto Sans SC", monospace';
 export const FAMILY_ENGLISH = '"Inter", "Noto Sans SC", sans-serif';
-export const FAMILY_WENKAI = '"LXGW WenKai Screen", "Noto Sans SC", sans-serif';
+export const FAMILY_WENKAI = '"--wuyan-body", "LXGW WenKai Screen", "Noto Sans SC", sans-serif';
 
 /**
  * 心情 → 强调色，分暗/亮两套。
