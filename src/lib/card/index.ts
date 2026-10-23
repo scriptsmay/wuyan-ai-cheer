@@ -2,7 +2,7 @@ import { createRng } from './rng';
 import { buildSeed, mergeCardRefs, resolveTemplateId, type CardAppearance } from './selection';
 import { CARD_HEIGHT, CARD_WIDTH, formatDate, resolveTheme } from './shared';
 import { TEMPLATES } from './templates';
-import type { CardInput, RenderedCard, TemplateContext } from './types';
+import type { CardInput, NormalizedCardInput, RenderedCard, TemplateContext } from './types';
 
 /** 站内主题由 applyTheme() 写入 <html data-theme>，卡片跟随它选池与配色。 */
 function resolveAppearance(input: CardInput): CardAppearance {
@@ -35,8 +35,12 @@ export async function renderCheerCard(input: CardInput): Promise<RenderedCard> {
 
   const theme = resolveTheme(input.mood, appearance);
   const rng = createRng(`${buildSeed(selection)}|${templateId}`);
-  const templateInput: CardInput = {
+  const templateInput: NormalizedCardInput = {
     ...input,
+    // 服务端出卡口入参从宽（emojiCaption/sourceSnapshotAt 可选），此处归一化补齐，
+    // 模板内部保持「必填字符串」语义零改动。
+    emojiCaption: input.emojiCaption ?? '',
+    sourceSnapshotAt: input.sourceSnapshotAt ?? '',
     refs: mergeCardRefs(input.refs, input.abilitiesDisplay),
   };
   const templateContext: TemplateContext = { ctx: context, input: templateInput, rng, theme, dateLabel };

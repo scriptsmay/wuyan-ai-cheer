@@ -17,6 +17,12 @@ export default defineConfig({
   build: {
     target: 'es2020',
     sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        render: fileURLToPath(new URL('./render.html', import.meta.url)),
+      },
+    },
   },
   server: {
     port: 5173,

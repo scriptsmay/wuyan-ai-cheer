@@ -17,11 +17,11 @@ export interface CardTheme {
 
 export interface CardInput {
   line: string;
-  emojiCaption: string;
-  refs: CheerRef[];
+  emojiCaption?: string;
+  refs?: CheerRef[];
   /** 结构化能力数据，渲染前会转换成与 refs 同池的候选条目 */
   abilitiesDisplay?: AbilitiesDisplay | null;
-  sourceSnapshotAt: string;
+  sourceSnapshotAt?: string;
   checkin?: Checkin;
   showQr?: boolean;
   showRefs?: boolean;
@@ -35,6 +35,8 @@ export interface CardInput {
   background?: { src: string; focusY: number };
   // 明暗外观：缺省从 <html data-theme> 读取，预览页/单测可显式覆盖
   appearance?: CardAppearance;
+  // Phase 2 字体变体：按族覆盖（值为字体 ID，如 muyao-suixin）
+  fonts?: { body?: string; title?: string };
 }
 
 export interface RenderedCard {
@@ -43,9 +45,19 @@ export interface RenderedCard {
   filename: string;
 }
 
+/**
+ * 模板内部消费的归一化输入：renderCheerCard 入口已把可选字段补齐默认值，
+ * 模板保持「必填」语义零改动。
+ */
+export type NormalizedCardInput = CardInput & {
+  emojiCaption: string;
+  sourceSnapshotAt: string;
+  refs: CheerRef[];
+};
+
 export interface TemplateContext {
   ctx: CanvasRenderingContext2D;
-  input: CardInput;
+  input: NormalizedCardInput;
   rng: CardRng;
   theme: CardTheme;
   /** 卡片展示日期（打卡卡取 checkin.date，应援卡取当天），YYYY-MM-DD */
