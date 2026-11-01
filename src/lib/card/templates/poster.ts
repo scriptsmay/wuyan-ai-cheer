@@ -1,12 +1,10 @@
 import type { CardInput, CardTemplate, TemplateContext } from '../types';
 import {
   FAMILY_BODY,
-  FAMILY_WENKAI,
   buildQrImage,
   drawQrFramed,
   drawText,
   drawRuns,
-  fitText,
   layoutCaption,
   loadImage,
 } from '../shared';
@@ -37,45 +35,25 @@ const COPY_MARGIN = 88;
 const COPY_WIDTH = 1080 - COPY_MARGIN * 2;
 
 interface PosterLayout {
-  /** 文案块起始基线的最小值（人像版式的面部安全线） */
-  copyTop: number;
-  copyMaxSize: number;
-  copyMinSize: number;
-  copyLineHeight: number;
+  /** 心情标语顶部锚定 y：原数据区位置，数据区移除后标语下移到此贴近底部 */
+  statsY: number;
   captionMaxSize: number;
   captionMinSize: number;
-  captionGap: number;
-  /** 标语底边允许到达的最低位置，给数据区留白 */
-  contentBottom: number;
-  /** 文案块向下吸附到 contentBottom，行数少时整体更靠下 */
-  bottomAnchor: boolean;
 }
 
 const LANDSCAPE_LAYOUT: PosterLayout = {
-  copyTop: 430,
-  copyMaxSize: 132,
-  copyMinSize: 56,
-  copyLineHeight: 1.28,
+  statsY: 1088,
   captionMaxSize: 42,
   captionMinSize: 28,
-  captionGap: 84,
-  contentBottom: 1000,
-  bottomAnchor: false,
 };
 
 /**
- * 选手相片版式：文案整体沉到人物面部以下，字号再降一档。
+ * 选手相片版式：心情标语锚定到原数据区位置（贴近底部），字号再降一档。
  */
 const PORTRAIT_LAYOUT: PosterLayout = {
-  copyTop: 610,
-  copyMaxSize: 76,
-  copyMinSize: 44,
-  copyLineHeight: 1.22,
+  statsY: 1290,
   captionMaxSize: 28,
   captionMinSize: 20,
-  captionGap: 22,
-  contentBottom: 1210,
-  bottomAnchor: true,
 };
 
 interface LoadedPosterBg {
@@ -134,28 +112,14 @@ async function draw(ctx: TemplateContext): Promise<void> {
   context.fillStyle = bottomShade;
   context.fillRect(0, 940, 1080, 500);
 
-  // ---- 文案排版（先算后画：标语位置依赖实际行数）----
-  const { captionGap } = layout;
+  // ---- 心情标语排版（数据区移除后锚定到原数据区位置，贴近底部）----
   const caption = await layoutCaption(context, input.emojiCaption, FAMILY_BODY, {
     maxWidth: COPY_WIDTH - 60,
     maxSize: layout.captionMaxSize,
     minSize: layout.captionMinSize,
     lineHeightRatio: 1.3,
   });
-  const captionBlock = caption.lines.length ? captionGap + caption.height : 0;
-  const fitted = await fitText(context, input.line, FAMILY_WENKAI, {
-    maxWidth: COPY_WIDTH,
-    maxLines: 5,
-    maxSize: layout.copyMaxSize,
-    minSize: layout.copyMinSize,
-    lineHeightRatio: layout.copyLineHeight,
-    weight: 400,
-    maxHeight: layout.contentBottom - layout.copyTop - captionBlock,
-  });
-  // 底部吸附：按实际行数从 contentBottom 反推首行基线，标语紧贴 contentBottom
-  const copyTop = layout.bottomAnchor
-    ? Math.max(layout.copyTop, layout.contentBottom - captionBlock - (fitted.lines.length - 1) * fitted.lineHeight)
-    : layout.copyTop;
+  const captionTop = layout.statsY;
 
   // ---- 眉头（品牌）----
   await drawText(
@@ -168,8 +132,6 @@ async function draw(ctx: TemplateContext): Promise<void> {
   );
 
   // ---- 心情标语：引用线式（左侧竖线 + 白字），长句折行时竖线随整块伸缩 ----
-  const copyBottom = copyTop + (fitted.lines.length - 1) * fitted.lineHeight;
-  const captionTop = copyBottom + captionGap;
   if (caption.lines.length) {
     context.save();
     context.font = caption.font;
