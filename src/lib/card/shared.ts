@@ -27,6 +27,13 @@ export const FAMILY_BODY = '"Noto Sans SC", sans-serif';
 export const FAMILY_MONO = '"JetBrains Mono", "Noto Sans SC", monospace';
 export const FAMILY_ENGLISH = '"Inter", "Noto Sans SC", sans-serif';
 export const FAMILY_WENKAI = '"--wuyan-body", "LXGW WenKai Screen", "Noto Sans SC", sans-serif';
+/**
+ * 可注入手写正文族（2026-11-03）：FAMILY_BODY 的占位族版本。
+ * poster 精简后仅剩小字中文（心情标语/页脚等）用 FAMILY_BODY，而它不含占位名，
+ * 服务端 fonts 注入对 poster 无效；需要吃手写体的绘制处改用本族。
+ * 与其他占位族同一契约：未注入时跳过首位落回 Noto Sans SC，线上外观不变。
+ */
+export const FAMILY_HAND = '"--wuyan-body", "Noto Sans SC", sans-serif';
 
 /**
  * 心情 → 强调色，分暗/亮两套。

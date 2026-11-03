@@ -1,6 +1,6 @@
 import type { CardInput, CardTemplate, TemplateContext } from '../types';
 import {
-  FAMILY_BODY,
+  FAMILY_HAND,
   buildQrImage,
   drawQrFramed,
   drawText,
@@ -113,7 +113,8 @@ async function draw(ctx: TemplateContext): Promise<void> {
   context.fillRect(0, 940, 1080, 500);
 
   // ---- 心情标语排版（数据区移除后锚定到原数据区位置，贴近底部）----
-  const caption = await layoutCaption(context, input.emojiCaption, FAMILY_BODY, {
+  // 中文小字用 FAMILY_HAND：服务端 fonts 注入时可吃手写体（FAMILY_BODY 无占位名，注入无效）
+  const caption = await layoutCaption(context, input.emojiCaption, FAMILY_HAND, {
     maxWidth: COPY_WIDTH - 60,
     maxSize: layout.captionMaxSize,
     minSize: layout.captionMinSize,
@@ -176,7 +177,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
       '扫码接收胜利信号',
       940,
       1220,
-      `500 22px ${FAMILY_BODY}`,
+      `500 22px ${FAMILY_HAND}`,
       'rgba(255,255,255,0.85)',
       'center'
     );
@@ -187,7 +188,7 @@ async function draw(ctx: TemplateContext): Promise<void> {
     context,
     [
       { text: dateLabel, font: `500 24px "JetBrains Mono", "Noto Sans SC", monospace`, color: footerColor },
-      { text: ' · KPL无言应援信号站', font: `500 24px ${FAMILY_BODY}`, color: footerColor },
+      { text: ' · KPL无言应援信号站', font: `500 24px ${FAMILY_HAND}`, color: footerColor },
     ],
     92,
     1404
